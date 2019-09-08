@@ -1,3 +1,3 @@
 # 14355-FTC2020
 
-Our team's code
+Team 14355's code for the Skystone competition
