@@ -1,0 +1,34 @@
+{
+  "robotMoves":[
+  {
+    "Direction": "0",
+    "Power": "0.2",
+    "Encoder":"750"
+  },
+  {
+    "Direction": "2",
+    "Power": "0.2",
+    "Encoder":"650"
+  },
+  {
+    "Direction": "0",
+    "Power": "0.2",
+    "Encoder":"2800"
+  },
+  {
+    "Direction": "2",
+    "Power": "0.2",
+    "Encoder":"400"
+  },
+  {
+    "Direction": "0",
+    "Power": "0.2",
+    "Encoder":"2000"
+  },
+  {
+    "Direction": "2",
+    "Power": "0.2",
+    "Encoder":"200"
+  }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "JaguarMoves": [
+  {
+    "ARM_LIFT_POWER": "0.5",
+    "ARM_LIFT_SLOW_POWER":"0.5",
+    "MIN_POT_VAL":"0.375",
+    "MAX_POT_VAL":"0.97",
+    "LATCH_OPEN_POS":"1.0",
+    "LATCH_CLOSE_POS":"0.0",
+    "SPEED":"0.2",
+    "BREAK_TIME":"1000"
+  }]
+}

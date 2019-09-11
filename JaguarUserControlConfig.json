@@ -1,0 +1,18 @@
+{
+  "JaguarFTC1_UserControl_Config":[
+  {
+    "NORMAL_DRIVE_POWER_FACTOR":"0.7",
+    "SLOW_DRIVE_POWER_FACTOR":"0.2",
+    "ARM_LIFT_POWER":"0.7",
+    "ARM_LIFT_SLOW_POWER":"0.4",
+	"ARM_STRETCH_POWER":"0.8",
+	"ARM_STRETCH_SLOW_POWER":"0.2",
+    "MIN_POT_VAL":"0.375",
+    "MAX_POT_VAL":"0.975",
+	"MAX_ARM_ENCODER_VAL":"2200",
+	"MIN_ARM_ENCODER_VAL":"0",
+    "DUMPING_POT_VAL":"0.76",
+    "DUMPING_ENCODER_VAL":"1900",
+    "HANGING_POT_VAL" : "0.45"
+  }]
+}
