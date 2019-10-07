@@ -30,12 +30,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -99,10 +96,13 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
     static final double P_TURN_COEFF = 0.1;     // Larger is more responsive, but also less stable
     static final double P_DRIVE_COEFF = 0.15;     // Larger is more responsive, but also less stable
 
-    public BNO055IMU gyro = null;
     //public ModernRoboticsI2cGyro gyro = null;                    // Additional Gyro device
 
-    // Dylan - set for four wheel motor used by team year 2019
+    public BNO055IMU gyro = null;
+    public Orientation lastAngles = new Orientation();
+    public double globalAngle, power = .30, correction;
+
+    // set for four wheel Mecanum motor used by team
     public DcMotor baseFrontLeftMotor = null; // Front Left base motor port 0
     public DcMotor baseFrontRightMotor = null; // Front Right base motor port 1
     public DcMotor baseBackLeftMotor = null; // Back Left base motor port 2
@@ -110,12 +110,6 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-
-        /*
-         * Initialize the standard drive system variables.
-         * The init() method of the hardware class does most of the work here
-         */
-        robotInit();
 /*
         // Send telemetry message to alert driver that we are calibrating;
         telemetry.addData(">", "Calibrating Gyro");    //
@@ -129,14 +123,19 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
             idle();
         }
 */
-        telemetry.addData(">", "Robot Ready.");    //
+
+        /*
+         * Initialize the standard drive system variables.
+         * The init() method of the hardware class does most of the work here
+         */
+        robotInit();
+        telemetry.addData(">", "Robot Ready.");
         telemetry.update();
 
         // comment out code from the example
         // robot.leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // Dylan -
         baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -146,15 +145,25 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         // Wait for the game to start (Display Gyro value), and reset gyro before we move..
         waitForStart();
 
-        /*
+        // restart gyro movement tracking.
+        resetAngle();
+
         while (!isStarted()) {
             //telemetry.addData(">", "Robot Heading = %d", gyro.getIntegratedZValue());
-            telemetry.addData(">", "Robot Heading = %d",gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            telemetry.addData(">", "Robot Heading = %d",lastAngles.firstAngle);
             telemetry.update();
         }
 
-        gyro.resetZAxisIntegrator();
-        */
+        // test gyro data reading without robot driving
+        while ( isStarted()) {
+            getAngle();
+            telemetry.addData(">", "globalAngle = %d",globalAngle);
+            telemetry.update();
+
+            correction = checkDirection();
+            telemetry.addData(">", "correction = %d",correction);
+            telemetry.update();
+        }
 
         // Step through each leg of the path,
         // Note: Reverse movement is obtained by setting a negative distance (not speed)
@@ -179,316 +188,6 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         telemetry.update();
     }
 
-
-    /**
-     * Method to drive on a fixed compass bearing (angle), based on encoder counts.
-     * Move will stop if either of these conditions occur:
-     * 1) Move gets to the desired position
-     * 2) Driver stops the opmode running.
-     *
-     * @param speed    Target speed for forward motion.  Should allow for _/- variance for adjusting heading
-     * @param distance Distance (in inches) to move from current position.  Negative distance means move backwards.
-     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
-     *                 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *                 If a relative angle is required, add/subtract from current heading.
-     */
-    public void gyroDrive(double speed,
-                          double distance,
-                          double angle) {
-
-        //int newLeftTarget;
-        //int newRightTarget;
-
-        int newFrontLeftTarget;
-        int newFrontRightTarget;
-        int newBackLeftTarget;
-        int newBackRightTarget;
-
-        int moveCounts;
-        double max;
-        double error;
-        double steer;
-        double leftSpeed;
-        double rightSpeed;
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-           /*
-            // Determine new target position, and pass to motor controller
-            moveCounts = (int) (distance * COUNTS_PER_INCH);
-            newLeftTarget = robot.leftDrive.getCurrentPosition() + moveCounts;
-            newRightTarget = robot.rightDrive.getCurrentPosition() + moveCounts;
-
-            // Set Target and Turn On RUN_TO_POSITION
-            robot.leftDrive.setTargetPosition(newLeftTarget);
-            robot.rightDrive.setTargetPosition(newRightTarget);
-
-            robot.leftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.rightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // start motion.
-            speed = Range.clip(Math.abs(speed), 0.0, 1.0);
-            robot.leftDrive.setPower(speed);
-            robot.rightDrive.setPower(speed);
-            */
-/*
-            telemetry.addData("Position",  "L: %7d %7d R: %7d %7d",
-                    baseFrontLeftMotor.getCurrentPosition(),
-                    baseBackLeftMotor.getCurrentPosition(),
-                    baseFrontRightMotor.getCurrentPosition(),
-                    baseBackRightMotor.getCurrentPosition());
-            telemetry.update();
-*/
-            // Dylan - Four wheel motor Determine new target position, and pass to motor controller
-            moveCounts = (int) (distance * COUNTS_PER_INCH);
-            newFrontLeftTarget = baseFrontLeftMotor.getCurrentPosition() + moveCounts;
-            newFrontRightTarget = baseFrontRightMotor.getCurrentPosition() + moveCounts;
-            newBackLeftTarget = baseBackLeftMotor.getCurrentPosition() + moveCounts;
-            newBackRightTarget = baseBackRightMotor.getCurrentPosition() + moveCounts;
-
-            // Dylan - Four wheel motor Set Target and Turn On RUN_TO_POSITION
-            baseFrontLeftMotor.setTargetPosition(newFrontLeftTarget);
-            baseFrontRightMotor.setTargetPosition(newFrontRightTarget);
-            baseBackLeftMotor.setTargetPosition(newBackLeftTarget);
-            baseBackRightMotor.setTargetPosition(newBackRightTarget);
-
-            baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            baseBackRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-/*
-            telemetry.addData("Target",  "L: %7d %7d R: %7d %7d",
-                    newFrontLeftTarget,
-                    newBackLeftTarget,
-                    newFrontRightTarget,
-                    newBackRightTarget);
-            telemetry.update();
-            sleep(10000);
-*/
-            // Dylan - Four wheel motor start motion.
-            speed = Range.clip(Math.abs(speed), 0.0, 1.0);
-            baseFrontLeftMotor.setPower(speed);
-            baseFrontRightMotor.setPower(speed);
-            baseBackLeftMotor.setPower(speed);
-            baseBackRightMotor.setPower(speed);
-
-
-            /*
-            // keep looping while we are still active, and BOTH motors are running.
-            while (opModeIsActive() &&
-                    (robot.leftDrive.isBusy() && robot.rightDrive.isBusy())) {
-             */
-
-            while (opModeIsActive() &&
-                    (baseFrontLeftMotor.isBusy() && baseFrontRightMotor.isBusy() &&
-                            baseBackLeftMotor.isBusy() && baseBackRightMotor.isBusy() )) {
-                // adjust relative speed based on heading error.
-/*                error = getError(angle);
-                steer = getSteer(error, P_DRIVE_COEFF);
-
-                // if driving in reverse, the motor correction also needs to be reversed
-                if (distance < 0)
-                    steer *= -1.0;
-
-                leftSpeed = speed - steer;
-                rightSpeed = speed + steer;
-
-                // Normalize speeds if either one exceeds +/- 1.0;
-                max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
-                if (max > 1.0) {
-                    leftSpeed /= max;
-                    rightSpeed /= max;
-                }
-
-                //robot.LeftDrive.setPower(leftSpeed);
-                //robot.RightDrive.setPower(rightSpeed);
-
-                baseFrontLeftMotor.setPower(leftSpeed);
-                baseFrontRightMotor.setPower(rightSpeed);
-                baseBackLeftMotor.setPower(leftSpeed);
-                baseBackRightMotor.setPower(rightSpeed);
-*/
-                /*
-                // Display drive status for the driver.
-                telemetry.addData("Err/St", "%5.1f/%5.1f", error, steer);
-                telemetry.addData("Target", "%7d:%7d", newLeftTarget, newRightTarget);
-                telemetry.addData("Actual", "%7d:%7d", robot.leftDrive.getCurrentPosition(),
-                        robot.rightDrive.getCurrentPosition());
-                telemetry.addData("Speed", "%5.2f:%5.2f", leftSpeed, rightSpeed);
-                telemetry.update();
-                */
-
-                // Dylan - Four wheel Display drive status for the driver.
-//                telemetry.addData("Err/St", "%5.1f/%5.1f", error, steer);
-                telemetry.addData("Target", "%7d:%7d:%7d:%7d", newFrontLeftTarget, newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
-                telemetry.addData("Actual", "%7d:%7d:%7d:%7d", baseFrontLeftMotor.getCurrentPosition(),
-                        baseFrontRightMotor.getCurrentPosition(), baseBackLeftMotor.getCurrentPosition(),
-                        baseBackRightMotor.getCurrentPosition());
-//                telemetry.addData("Speed", "%5.2f:%5.2f", leftSpeed, rightSpeed);
-                telemetry.update();
-            }
-
-            /*
-            // Stop all motion;
-            robot.leftDrive.setPower(0);
-            robot.rightDrive.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-            robot.leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-             */
-
-            // Dylan - four wheel Stop all motion;
-            baseFrontLeftMotor.setPower(0);
-            baseFrontRightMotor.setPower(0);
-            baseBackLeftMotor.setPower(0);
-            baseBackRightMotor.setPower(0);
-
-            // Dylan - four wheel Turn off RUN_TO_POSITION
-            baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        }
-    }
-
-    /**
-     * Method to spin on central axis to point in a new direction.
-     * Move will stop if either of these conditions occur:
-     * 1) Move gets to the heading (angle)
-     * 2) Driver stops the opmode running.
-     *
-     * @param speed Desired speed of turn.
-     * @param angle Absolute Angle (in Degrees) relative to last gyro reset.
-     *              0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *              If a relative angle is required, add/subtract from current heading.
-     */
-    public void gyroTurn(double speed, double angle) {
-
-        // keep looping while we are still active, and not on heading.
-        while (opModeIsActive() && !onHeading(speed, angle, P_TURN_COEFF)) {
-            // Update telemetry & Allow time for other processes to run.
-            telemetry.update();
-        }
-    }
-
-    /**
-     * Method to obtain & hold a heading for a finite amount of time
-     * Move will stop once the requested time has elapsed
-     *
-     * @param speed    Desired speed of turn.
-     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
-     *                 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *                 If a relative angle is required, add/subtract from current heading.
-     * @param holdTime Length of time (in seconds) to hold the specified heading.
-     */
-    public void gyroHold(double speed, double angle, double holdTime) {
-
-        ElapsedTime holdTimer = new ElapsedTime();
-
-        // keep looping while we have time remaining.
-        holdTimer.reset();
-        while (opModeIsActive() && (holdTimer.time() < holdTime)) {
-            // Update telemetry & Allow time for other processes to run.
-            onHeading(speed, angle, P_TURN_COEFF);
-            telemetry.update();
-        }
-
-        /*
-        // Stop all motion;
-        robot.leftDrive.setPower(0);
-        robot.rightDrive.setPower(0);
-         */
-
-        // Dylan - four wheel Stop all motion;
-        baseFrontLeftMotor.setPower(0);
-        baseFrontRightMotor.setPower(0);
-        baseBackLeftMotor.setPower(0);
-        baseBackLeftMotor.setPower(0);
-    }
-
-    /**
-     * Perform one cycle of closed loop heading control.
-     *
-     * @param speed  Desired speed of turn.
-     * @param angle  Absolute Angle (in Degrees) relative to last gyro reset.
-     *               0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *               If a relative angle is required, add/subtract from current heading.
-     * @param PCoeff Proportional Gain coefficient
-     * @return
-     */
-    boolean onHeading(double speed, double angle, double PCoeff) {
-        double error;
-        double steer;
-        boolean onTarget = false;
-        double leftSpeed;
-        double rightSpeed;
-
-        // determine turn power based on +/- error
-        error = getError(angle);
-
-        if (Math.abs(error) <= HEADING_THRESHOLD) {
-            steer = 0.0;
-            leftSpeed = 0.0;
-            rightSpeed = 0.0;
-            onTarget = true;
-        } else {
-            steer = getSteer(error, PCoeff);
-            rightSpeed = speed * steer;
-            leftSpeed = -rightSpeed;
-        }
-
-        /*
-        // Send desired speeds to motors.
-        robot.leftDrive.setPower(leftSpeed);
-        robot.rightDrive.setPower(rightSpeed);
-         */
-
-        // Dylan - four wheel Send desired speeds to motors
-        baseFrontLeftMotor.setPower(leftSpeed);
-        baseFrontRightMotor.setPower(rightSpeed);
-        baseBackLeftMotor.setPower(leftSpeed);
-        baseBackRightMotor.setPower(rightSpeed);
-
-        // Display it for the driver.
-        telemetry.addData("Target", "%5.2f", angle);
-        telemetry.addData("Err/St", "%5.2f/%5.2f", error, steer);
-        telemetry.addData("Speed.", "%5.2f:%5.2f", leftSpeed, rightSpeed);
-
-        return onTarget;
-    }
-
-    /**
-     * getError determines the error between the target angle and the robot's current heading
-     *
-     * @param targetAngle Desired angle (relative to global reference established at last Gyro Reset).
-     * @return error angle: Degrees in the range +/- 180. Centered on the robot's frame of reference
-     * +ve error means the robot should turn LEFT (CCW) to reduce error.
-     */
-    public double getError(double targetAngle) {
-
-        double robotError;
-
-        // calculate error in -179 to +180 range  (
-//        robotError = targetAngle - gyro.getIntegratedZValue();
-        robotError = targetAngle - gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        while (robotError > 180) robotError -= 360;
-        while (robotError <= -180) robotError += 360;
-        return robotError;
-        return 0;
-    }
-
-    /**
-     * returns desired steering force.  +/- 1 range.  +ve = steer left
-     *
-     * @param error  Encoder counts
-     * @param PCoeff Proportional Gain Coefficient
-     * @return
-     */
-    public double getSteer(double error, double PCoeff) {
-        return Range.clip(error * PCoeff, -1, 1);
-    }
     public void robotInit()
     {
 /*
@@ -528,11 +227,13 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        // Dylan - Declare four wheel motor
+
+        // Declare four wheel Mecanum motor
         baseFrontLeftMotor = hardwareMap.get(DcMotor.class, "baseFrontLeftMotor");
         baseFrontRightMotor = hardwareMap.get(DcMotor.class, "baseFrontRightMotor");
         baseBackLeftMotor = hardwareMap.get(DcMotor.class, "baseBackLeftMotor");
         baseBackRightMotor = hardwareMap.get(DcMotor.class, "baseBackRightMotor");
+
 //        armLiftLeftDrive = hardwareMap.get(DcMotor.class, "armLiftLeftMotor");
 //        armLiftRightDrive = hardwareMap.get(DcMotor.class, "armLiftRightMotor");
 //        armLeftMotor = hardwareMap.get(DcMotor.class, "armLeftMotor");
@@ -555,7 +256,8 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         // Ensure the robot it stationary, then reset the encoders and calibrate the gyro.
         //robot.leftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         //robot.rightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        // Dylan - Ensure the robot it stationary, then reset the encoders and calibrate the gyro.
+
+        // Ensure the robot it stationary, then reset the encoders and calibrate the gyro.
         baseFrontLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseFrontRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseBackLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -567,8 +269,9 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 //        armRightMotor.setDirection(DcMotor.Direction.REVERSE);
 
 //        gyro = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
+        // Initialize gyro
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.mode                = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
@@ -578,7 +281,6 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
         // and named "imu".
         gyro = hardwareMap.get(BNO055IMU.class, "gyro");
-
         gyro.initialize(parameters);
 
         telemetry.addData("Mode", "gyro calibrating...");
@@ -594,7 +296,6 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         telemetry.addData("Mode", "waiting for start");
         telemetry.addData("gyro calib status", gyro.getCalibrationStatus().toString());
         telemetry.update();
-
 
 
         // !!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!
@@ -662,4 +363,414 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
     }
+
+    /**
+     * Method to drive on a fixed compass bearing (angle), based on encoder counts.
+     * Move will stop if either of these conditions occur:
+     * 1) Move gets to the desired position
+     * 2) Driver stops the opmode running.
+     *
+     * @param speed    Target speed for forward motion.  Should allow for _/- variance for adjusting heading
+     * @param distance Distance (in inches) to move from current position.  Negative distance means move backwards.
+     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
+     *                 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     *                 If a relative angle is required, add/subtract from current heading.
+     */
+    public void gyroDrive(double speed,
+                          double distance,
+                          double angle) {
+
+        //int newLeftTarget;
+        //int newRightTarget;
+
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+        int newBackLeftTarget;
+        int newBackRightTarget;
+
+        int moveCounts;
+        double max;
+        double error;
+        double steer;
+        double leftSpeed;
+        double rightSpeed;
+
+        // Ensure that the opmode is still active
+
+
+        if (opModeIsActive()) {
+
+            /*
+            // Determine new target position, and pass to motor controller
+            moveCounts = (int) (distance * COUNTS_PER_INCH);
+            //newLeftTarget = robot.leftDrive.getCurrentPosition() + moveCounts;
+            //newRightTarget = robot.rightDrive.getCurrentPosition() + moveCounts;
+
+            // Set Target and Turn On RUN_TO_POSITION
+            //robot.leftDrive.setTargetPosition(newLeftTarget);
+            //robot.rightDrive.setTargetPosition(newRightTarget);
+
+            //robot.leftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            //robot.rightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // start motion.
+            //speed = Range.clip(Math.abs(speed), 0.0, 1.0);
+            //robot.leftDrive.setPower(speed);
+            //robot.rightDrive.setPower(speed);
+            */
+
+            // Four wheel Mecanum motor determine new target position, and pass to motor controller
+            telemetry.addData("Position", "L: %7d %7d R: %7d %7d",
+                    baseFrontLeftMotor.getCurrentPosition(),
+                    baseBackLeftMotor.getCurrentPosition(),
+                    baseFrontRightMotor.getCurrentPosition(),
+                    baseBackRightMotor.getCurrentPosition());
+            telemetry.update();
+
+            moveCounts = (int) (distance * COUNTS_PER_INCH);
+            newFrontLeftTarget = baseFrontLeftMotor.getCurrentPosition() + moveCounts;
+            newFrontRightTarget = baseFrontRightMotor.getCurrentPosition() + moveCounts;
+            newBackLeftTarget = baseBackLeftMotor.getCurrentPosition() + moveCounts;
+            newBackRightTarget = baseBackRightMotor.getCurrentPosition() + moveCounts;
+
+            // Four wheel Mecanum motor Set Target and Turn On RUN_TO_POSITION
+            baseFrontLeftMotor.setTargetPosition(newFrontLeftTarget);
+            baseFrontRightMotor.setTargetPosition(newFrontRightTarget);
+            baseBackLeftMotor.setTargetPosition(newBackLeftTarget);
+            baseBackRightMotor.setTargetPosition(newBackRightTarget);
+
+            baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            baseBackRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            telemetry.addData("Target", "L: %7d %7d R: %7d %7d",
+                    newFrontLeftTarget,
+                    newBackLeftTarget,
+                    newFrontRightTarget,
+                    newBackRightTarget);
+            telemetry.update();
+            sleep(10000);
+
+            // Dylan - Four wheel motor start motion.
+            speed = Range.clip(Math.abs(speed), 0.0, 1.0);
+            baseFrontLeftMotor.setPower(speed);
+            baseFrontRightMotor.setPower(speed);
+            baseBackLeftMotor.setPower(speed);
+            baseBackRightMotor.setPower(speed);
+
+            /*
+            // keep looping while we are still active, and BOTH motors are running.
+            while (opModeIsActive() &&
+                    (robot.leftDrive.isBusy() && robot.rightDrive.isBusy())) {
+             */
+
+            while (opModeIsActive() &&
+                    (baseFrontLeftMotor.isBusy() && baseFrontRightMotor.isBusy() &&
+                            baseBackLeftMotor.isBusy() && baseBackRightMotor.isBusy())) {
+
+                // Use gyro to drive in a straight line.
+                correction = checkDirection();
+
+                telemetry.addData("1 gyro heading", lastAngles.firstAngle);
+                telemetry.addData("2 global heading", globalAngle);
+                telemetry.addData("3 correction", correction);
+                telemetry.update();
+
+                baseFrontLeftMotor.setPower(speed - correction);
+                baseFrontRightMotor.setPower(speed + correction);
+                baseBackLeftMotor.setPower(speed - correction);
+                baseBackRightMotor.setPower(speed + correction);
+
+                /*
+
+                // adjust relative speed based on heading error.
+                error = getError(angle);
+                steer = getSteer(error, P_DRIVE_COEFF);
+
+                // if driving in reverse, the motor correction also needs to be reversed
+                if (distance < 0)
+                    steer *= -1.0;
+
+                leftSpeed = speed - steer;
+                rightSpeed = speed + steer;
+
+                // Normalize speeds if either one exceeds +/- 1.0;
+                max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
+                if (max > 1.0) {
+                    leftSpeed /= max;
+                    rightSpeed /= max;
+                }
+
+                //robot.LeftDrive.setPower(leftSpeed);
+                //robot.RightDrive.setPower(rightSpeed);
+
+                baseFrontLeftMotor.setPower(leftSpeed);
+                baseFrontRightMotor.setPower(rightSpeed);
+                baseBackLeftMotor.setPower(leftSpeed);
+                baseBackRightMotor.setPower(rightSpeed);
+
+                // Display drive status for the driver.
+                telemetry.addData("Err/St", "%5.1f/%5.1f", error, steer);
+                telemetry.addData("Target", "%7d:%7d", newLeftTarget, newRightTarget);
+                telemetry.addData("Actual", "%7d:%7d", robot.leftDrive.getCurrentPosition(),
+                        robot.rightDrive.getCurrentPosition());
+                telemetry.addData("Speed", "%5.2f:%5.2f", leftSpeed, rightSpeed);
+                telemetry.update();
+
+
+                // Dylan - Four wheel Display drive status for the driver.
+//                telemetry.addData("Err/St", "%5.1f/%5.1f", error, steer);
+                telemetry.addData("Target", "%7d:%7d:%7d:%7d", newFrontLeftTarget, newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
+                telemetry.addData("Actual", "%7d:%7d:%7d:%7d", baseFrontLeftMotor.getCurrentPosition(),
+                        baseFrontRightMotor.getCurrentPosition(), baseBackLeftMotor.getCurrentPosition(),
+                        baseBackRightMotor.getCurrentPosition());
+//                telemetry.addData("Speed", "%5.2f:%5.2f", leftSpeed, rightSpeed);
+                telemetry.update();
+
+                */
+            }
+
+            /*
+            // Stop all motion;
+            robot.leftDrive.setPower(0);
+            robot.rightDrive.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            robot.leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+             */
+
+            // Dylan - four wheel Stop all motion;
+            baseFrontLeftMotor.setPower(0);
+            baseFrontRightMotor.setPower(0);
+            baseBackLeftMotor.setPower(0);
+            baseBackRightMotor.setPower(0);
+
+            // Dylan - four wheel Turn off RUN_TO_POSITION
+            baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+    }
+
+    /**
+     * Resets the cumulative angle tracking to zero.
+     */
+    public void resetAngle()
+    {
+        lastAngles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        globalAngle = 0;
+    }
+
+    /**
+     * Get current cumulative angle rotation from last reset.
+     * @return Angle in degrees. + = left, - = right.
+     */
+    public double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+
+        if (deltaAngle < -180)
+            deltaAngle += 360;
+        else if (deltaAngle > 180)
+            deltaAngle -= 360;
+
+        globalAngle += deltaAngle;
+
+        lastAngles = angles;
+
+        return globalAngle;
+    }
+
+    /**
+     * See if we are moving in a straight line and if not return a power correction value.
+     * @return Power adjustment, + is adjust left - is adjust right.
+     */
+    public double checkDirection()
+    {
+        // The gain value determines how sensitive the correction is to direction changes.
+        // You will have to experiment with your robot to get small smooth direction changes
+        // to stay on a straight line.
+        double correction, angle, gain = .10;
+
+        angle = getAngle();
+
+        if (angle == 0)
+            correction = 0;             // no adjustment.
+        else
+            correction = -angle;        // reverse sign of angle for correction.
+
+        correction = correction * gain;
+
+        return correction;
+    }
+
+
+    /**
+     * Method to spin on central axis to point in a new direction.
+     * Move will stop if either of these conditions occur:
+     * 1) Move gets to the heading (angle)
+     * 2) Driver stops the opmode running.
+     *
+     * @param speed Desired speed of turn.
+     * @param angle Absolute Angle (in Degrees) relative to last gyro reset.
+     *              0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     *              If a relative angle is required, add/subtract from current heading.
+     */
+
+    /*
+    public void gyroTurn(double speed, double angle) {
+
+        // keep looping while we are still active, and not on heading.
+        while (opModeIsActive() && !onHeading(speed, angle, P_TURN_COEFF)) {
+            // Update telemetry & Allow time for other processes to run.
+            telemetry.update();
+        }
+    }
+     */
+
+    /**
+     * Method to obtain & hold a heading for a finite amount of time
+     * Move will stop once the requested time has elapsed
+     *
+     * @param speed    Desired speed of turn.
+     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
+     *                 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     *                 If a relative angle is required, add/subtract from current heading.
+     * @param holdTime Length of time (in seconds) to hold the specified heading.
+     */
+
+    /*
+    public void gyroHold(double speed, double angle, double holdTime) {
+
+        ElapsedTime holdTimer = new ElapsedTime();
+
+        // keep looping while we have time remaining.
+        holdTimer.reset();
+        while (opModeIsActive() && (holdTimer.time() < holdTime)) {
+            // Update telemetry & Allow time for other processes to run.
+            onHeading(speed, angle, P_TURN_COEFF);
+            telemetry.update();
+        }
+
+        // Stop all motion;
+        //robot.leftDrive.setPower(0);
+        //robot.rightDrive.setPower(0);
+
+
+        // Dylan - four wheel Stop all motion;
+        baseFrontLeftMotor.setPower(0);
+        baseFrontRightMotor.setPower(0);
+        baseBackLeftMotor.setPower(0);
+        baseBackLeftMotor.setPower(0);
+    }
+    */
+
+    /**
+     * Perform one cycle of closed loop heading control.
+     *
+     * @param speed  Desired speed of turn.
+     * @param angle  Absolute Angle (in Degrees) relative to last gyro reset.
+     *               0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     *               If a relative angle is required, add/subtract from current heading.
+     * @param PCoeff Proportional Gain coefficient
+     * @return
+     */
+    /*
+    boolean onHeading(double speed, double angle, double PCoeff) {
+        double error;
+        double steer;
+        boolean onTarget = false;
+        double leftSpeed;
+        double rightSpeed;
+
+        // determine turn power based on +/- error
+        error = getError(angle);
+
+        if (Math.abs(error) <= HEADING_THRESHOLD) {
+            steer = 0.0;
+            leftSpeed = 0.0;
+            rightSpeed = 0.0;
+            onTarget = true;
+        } else {
+            steer = getSteer(error, PCoeff);
+            rightSpeed = speed * steer;
+            leftSpeed = -rightSpeed;
+        }
+
+
+        // Send desired speeds to motors.
+        //robot.leftDrive.setPower(leftSpeed);
+        // robot.rightDrive.setPower(rightSpeed);
+
+
+        // Dylan - four wheel Send desired speeds to motors
+        baseFrontLeftMotor.setPower(leftSpeed);
+        baseFrontRightMotor.setPower(rightSpeed);
+        baseBackLeftMotor.setPower(leftSpeed);
+        baseBackRightMotor.setPower(rightSpeed);
+
+        // Display it for the driver.
+        telemetry.addData("Target", "%5.2f", angle);
+        telemetry.addData("Err/St", "%5.2f/%5.2f", error, steer);
+        telemetry.addData("Speed.", "%5.2f:%5.2f", leftSpeed, rightSpeed);
+
+        return onTarget;
+    }
+    */
+
+    /**
+     * getError determines the error between the target angle and the robot's current heading
+     *
+     * @param targetAngle Desired angle (relative to global reference established at last Gyro Reset).
+     * @return error angle: Degrees in the range +/- 180. Centered on the robot's frame of reference
+     * +ve error means the robot should turn LEFT (CCW) to reduce error.
+     */
+    /*
+    public double getError(double targetAngle) {
+
+
+        lastAngles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        Orientation angles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+
+        double robotError;
+
+        telemetry.addData("deltaAngle", "%5.2f", deltaAngle);
+        telemetry.update();
+        // calculate error in -179 to +180 range  (
+//        robotError = targetAngle - gyro.getIntegratedZValue();
+        robotError = targetAngle - deltaAngle;
+        telemetry.addData("robotError", "%5.2f", robotError);
+        telemetry.update();
+        while (robotError <= -180) robotError += 360;
+        return robotError;
+        //return 0;
+    }
+
+    */
+
+    /**
+     * returns desired steering force.  +/- 1 range.  +ve = steer left
+     *
+     * @param error  Encoder counts
+     * @param PCoeff Proportional Gain Coefficient
+     * @return
+     */
+    /*
+    public double getSteer(double error, double PCoeff) {
+        return Range.clip(error * PCoeff, -1, 1);
+    }
+    */
 }
