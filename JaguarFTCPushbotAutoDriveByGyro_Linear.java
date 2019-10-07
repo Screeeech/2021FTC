@@ -156,7 +156,7 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 
         // test gyro data reading without robot driving
         while ( isStarted()) {
-            getAngle();
+            globalAngle = getAngle();
             telemetry.addData(">", "globalAngle = %d",globalAngle);
             telemetry.update();
 
