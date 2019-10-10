@@ -150,40 +150,53 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 
         while (!isStarted()) {
             //telemetry.addData(">", "Robot Heading = %d", gyro.getIntegratedZValue());
-            telemetry.addData(">", "Robot Heading = %d",lastAngles.firstAngle);
+            telemetry.addData(">", "Robot Heading = %5.2f",lastAngles.firstAngle);
             telemetry.update();
         }
 
         // test gyro data reading without robot driving
+        /*
         while ( isStarted()) {
             globalAngle = getAngle();
-            telemetry.addData(">", "globalAngle = %d",globalAngle);
+            telemetry.addData(">", "globalAngle = %5.2f",globalAngle);
             telemetry.update();
 
             correction = checkDirection();
-            telemetry.addData(">", "correction = %d",correction);
+            telemetry.addData(">", "correction = %5.2f",correction);
             telemetry.update();
         }
+        */
 
         // Step through each leg of the path,
         // Note: Reverse movement is obtained by setting a negative distance (not speed)
         // Put a hold after each turn
-        telemetry.addData("Prepare to drive FWD", "");
+        //telemetry.addData("Prepare to drive FWD", "");
+        telemetry.addData("Prepare to drive", "");
         telemetry.update();
         sleep(3000);
         gyroDrive(DRIVE_SPEED, 48.0, 0.0);    // Drive FWD 48 inches
-        // gyroTurn(TURN_SPEED, -45.0);         // Turn  CCW to -45 Degrees
-        //gyroHold(TURN_SPEED, -45.0, 0.5);    // Hold -45 Deg heading for a 1/2 second
-        //gyroDrive(DRIVE_SPEED, 12.0, -45.0);  // Drive FWD 12 inches at 45 degrees
-        //gyroTurn(TURN_SPEED, 45.0);         // Turn  CW  to  45 Degrees
-        //gyroHold(TURN_SPEED, 45.0, 0.5);    // Hold  45 Deg heading for a 1/2 second
-        //gyroTurn(TURN_SPEED, 0.0);         // Turn  CW  to   0 Degrees
-        //gyroHold(TURN_SPEED, 0.0, 1.0);    // Hold  0 Deg heading for a 1 second
+        gyroDrive(DRIVE_SPEED, -48.0, 0.0);    // Drive REV 48 inches
+        sleep(3000);
+        gyroDrive(DRIVE_SPEED, 48.0, 0.0);    // Drive FWD 48 inches
+        gyroTurn(DRIVE_SPEED, 90);
+        gyroDrive(DRIVE_SPEED, 48.0, 0.0);    // Drive FWD 48 inches
+        sleep(3000);
+        gyroDrive(DRIVE_SPEED, -48.0, 0.0);    // Drive REV 48 inches
+        gyroTurn(DRIVE_SPEED, -90);
+        gyroDrive(DRIVE_SPEED, -48.0, 0.0);    // Drive REV 48 inches
+        /*
+        gyroTurn(TURN_SPEED, -45.0);         // Turn  CCW to -45 Degrees
+        gyroHold(TURN_SPEED, -45.0, 0.5);    // Hold -45 Deg heading for a 1/2 second
+        gyroDrive(DRIVE_SPEED, 12.0, -45.0);  // Drive FWD 12 inches at 45 degrees
+        gyroTurn(TURN_SPEED, 45.0);         // Turn  CW  to  45 Degrees
+        gyroHold(TURN_SPEED, 45.0, 0.5);    // Hold  45 Deg heading for a 1/2 second
+        gyroTurn(TURN_SPEED, 0.0);         // Turn  CW  to   0 Degrees
+        gyroHold(TURN_SPEED, 0.0, 1.0);    // Hold  0 Deg heading for a 1 second
         telemetry.addData("Prepare to drive REV", "");
         telemetry.update();
         sleep(3000);
         gyroDrive(DRIVE_SPEED, -48.0, 0.0);    // Drive REV 48 inches
-
+        */
         telemetry.addData("Path", "Complete");
         telemetry.update();
     }
@@ -380,8 +393,12 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
                           double distance,
                           double angle) {
 
-        //int newLeftTarget;
-        //int newRightTarget;
+        /*
+        int newLeftTarget;
+        int newRightTarget;
+        double error;
+        double steer;
+        */
 
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -390,8 +407,6 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 
         int moveCounts;
         double max;
-        double error;
-        double steer;
         double leftSpeed;
         double rightSpeed;
 
@@ -452,7 +467,7 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
             telemetry.update();
             sleep(10000);
 
-            // Dylan - Four wheel motor start motion.
+            // Four wheel Mecanum motor start motion.
             speed = Range.clip(Math.abs(speed), 0.0, 1.0);
             baseFrontLeftMotor.setPower(speed);
             baseFrontRightMotor.setPower(speed);
@@ -470,30 +485,21 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
                             baseBackLeftMotor.isBusy() && baseBackRightMotor.isBusy())) {
 
                 // Use gyro to drive in a straight line.
-                correction = checkDirection();
 
-                telemetry.addData("1 gyro heading", lastAngles.firstAngle);
-                telemetry.addData("2 global heading", globalAngle);
-                telemetry.addData("3 correction", correction);
+                //correction = checkDirection();
+                correction = checkDirection(angle);
+
+                telemetry.addData("1 gyro heading","Robot Heading = %5.2f", lastAngles.firstAngle);
+                telemetry.addData("2 global heading", "Global Angle = %5.2f", globalAngle);
+                telemetry.addData("3 correction", "Correction = %5.2f", correction);
                 telemetry.update();
-
-                baseFrontLeftMotor.setPower(speed - correction);
-                baseFrontRightMotor.setPower(speed + correction);
-                baseBackLeftMotor.setPower(speed - correction);
-                baseBackRightMotor.setPower(speed + correction);
-
-                /*
-
-                // adjust relative speed based on heading error.
-                error = getError(angle);
-                steer = getSteer(error, P_DRIVE_COEFF);
 
                 // if driving in reverse, the motor correction also needs to be reversed
                 if (distance < 0)
-                    steer *= -1.0;
+                    correction *= -1.0;
 
-                leftSpeed = speed - steer;
-                rightSpeed = speed + steer;
+                leftSpeed = speed - correction;
+                rightSpeed = speed + correction;
 
                 // Normalize speeds if either one exceeds +/- 1.0;
                 max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
@@ -501,6 +507,18 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
                     leftSpeed /= max;
                     rightSpeed /= max;
                 }
+
+                baseFrontLeftMotor.setPower(leftSpeed);
+                baseFrontRightMotor.setPower(rightSpeed);
+                baseBackLeftMotor.setPower(leftSpeed);
+                baseBackRightMotor.setPower(rightSpeed);
+
+                /*
+
+                // adjust relative speed based on heading error.
+                error = getError(angle);
+                steer = getSteer(error, P_DRIVE_COEFF);
+
 
                 //robot.LeftDrive.setPower(leftSpeed);
                 //robot.RightDrive.setPower(rightSpeed);
@@ -541,18 +559,85 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
             robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
              */
 
-            // Dylan - four wheel Stop all motion;
+            // Stop four wheel Mecanum all motion;
             baseFrontLeftMotor.setPower(0);
             baseFrontRightMotor.setPower(0);
             baseBackLeftMotor.setPower(0);
             baseBackRightMotor.setPower(0);
 
-            // Dylan - four wheel Turn off RUN_TO_POSITION
+            // Turn off RUN_TO_POSITION
             baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
+    }
+
+    /**
+     * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
+     * @param degrees Degrees to turn, + is left - is right
+     */
+    //public void rotate(int degrees, double power)
+    public void gyroTurn(double power, int degrees)
+    {
+        //double  leftPower, rightPower;
+        double  leftSpeed, rightSpeed;
+        // restart imu movement tracking.
+        resetAngle();
+
+        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
+        // clockwise (right).
+
+        if (degrees < 0)
+        {   // turn right.
+            //leftPower = power;
+            //rightPower = -power;
+            leftSpeed = power;
+            rightSpeed = -power;
+        }
+        else if (degrees > 0)
+        {   // turn left.
+            //leftPower = -power;
+            //rightPower = power;
+            leftSpeed = -power;
+            rightSpeed = power;
+        }
+        else return;
+
+        // set power to rotate.
+        //leftMotor.setPower(leftPower);
+        //rightMotor.setPower(rightPower);
+
+        baseFrontLeftMotor.setPower(leftSpeed);
+        baseFrontRightMotor.setPower(rightSpeed);
+        baseBackLeftMotor.setPower(leftSpeed);
+        baseBackRightMotor.setPower(rightSpeed);
+
+        // rotate until turn is completed.
+        if (degrees < 0)
+        {
+            // On right turn we have to get off zero first.
+            while (opModeIsActive() && getAngle() == 0) {}
+
+            while (opModeIsActive() && getAngle() > degrees) {}
+        }
+        else    // left turn.
+            while (opModeIsActive() && getAngle() < degrees) {}
+
+        // turn the motors off.
+        //rightMotor.setPower(0);
+        //leftMotor.setPower(0);
+
+        baseFrontLeftMotor.setPower(0);
+        baseFrontRightMotor.setPower(0);
+        baseBackLeftMotor.setPower(0);
+        baseBackRightMotor.setPower(0);
+
+        // wait for rotation to stop.
+        sleep(1000);
+
+        // reset angle tracking on new heading.
+        resetAngle();
     }
 
     /**
@@ -596,16 +681,19 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
      * See if we are moving in a straight line and if not return a power correction value.
      * @return Power adjustment, + is adjust left - is adjust right.
      */
-    public double checkDirection()
+    //public double checkDirection()
+    public double checkDirection( double angle )
     {
         // The gain value determines how sensitive the correction is to direction changes.
         // You will have to experiment with your robot to get small smooth direction changes
         // to stay on a straight line.
-        double correction, angle, gain = .10;
+        //double correction, angle, gain = .10;
+        double correction, actualAngle, gain = .10;
 
-        angle = getAngle();
+        actualAngle = getAngle();
 
-        if (angle == 0)
+        //if (angle == 0)
+        if (actualAngle == angle)
             correction = 0;             // no adjustment.
         else
             correction = -angle;        // reverse sign of angle for correction.
@@ -614,7 +702,7 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
 
         return correction;
     }
-
+}
 
     /**
      * Method to spin on central axis to point in a new direction.
@@ -627,8 +715,7 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
      *              0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
      *              If a relative angle is required, add/subtract from current heading.
      */
-
-    /*
+/*
     public void gyroTurn(double speed, double angle) {
 
         // keep looping while we are still active, and not on heading.
@@ -637,8 +724,66 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
             telemetry.update();
         }
     }
+*/
+    /**
+     * Perform one cycle of closed loop heading control.
+     *
+     * @param speed  Desired speed of turn.
+     * @param angle  Absolute Angle (in Degrees) relative to last gyro reset.
+     *               0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
+     *               If a relative angle is required, add/subtract from current heading.
+     * @param PCoeff Proportional Gain coefficient
+     * @return
      */
+/*
+    boolean onHeading(double speed, double angle, double PCoeff) {
+        double error;
+        double steer;
+        boolean onTarget = false;
+        double leftSpeed;
+        double rightSpeed;
 
+        // determine turn power based on +/- error
+        error = getError(angle);
+
+        //if (angle == 0)
+            error = 0;             // no adjustment.
+        else
+            error = -angle;        // reverse sign of angle for correction.
+
+        error = error * gain;
+
+        if (Math.abs(error) <= HEADING_THRESHOLD) {
+            steer = 0.0;
+            leftSpeed = 0.0;
+            rightSpeed = 0.0;
+            onTarget = true;
+        } else {
+            steer = getSteer(error, PCoeff);
+            rightSpeed = speed * steer;
+            leftSpeed = -rightSpeed;
+        }
+
+
+        // Send desired speeds to motors.
+        //robot.leftDrive.setPower(leftSpeed);
+        // robot.rightDrive.setPower(rightSpeed);
+
+
+        // Send desired speeds to four wheel Mecanum motors
+        baseFrontLeftMotor.setPower(leftSpeed);
+        baseFrontRightMotor.setPower(rightSpeed);
+        baseBackLeftMotor.setPower(leftSpeed);
+        baseBackRightMotor.setPower(rightSpeed);
+
+        // Display it for the driver.
+        telemetry.addData("Target", "%5.2f", angle);
+        telemetry.addData("Err/St", "%5.2f/%5.2f", error, steer);
+        telemetry.addData("Speed.", "%5.2f:%5.2f", leftSpeed, rightSpeed);
+
+        return onTarget;
+    }
+*/
     /**
      * Method to obtain & hold a heading for a finite amount of time
      * Move will stop once the requested time has elapsed
@@ -674,61 +819,19 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
         baseBackLeftMotor.setPower(0);
         baseBackLeftMotor.setPower(0);
     }
-    */
-
+*/
     /**
-     * Perform one cycle of closed loop heading control.
+     * returns desired steering force.  +/- 1 range.  +ve = steer left
      *
-     * @param speed  Desired speed of turn.
-     * @param angle  Absolute Angle (in Degrees) relative to last gyro reset.
-     *               0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *               If a relative angle is required, add/subtract from current heading.
-     * @param PCoeff Proportional Gain coefficient
+     * @param error  Encoder counts
+     * @param PCoeff Proportional Gain Coefficient
      * @return
      */
-    /*
-    boolean onHeading(double speed, double angle, double PCoeff) {
-        double error;
-        double steer;
-        boolean onTarget = false;
-        double leftSpeed;
-        double rightSpeed;
-
-        // determine turn power based on +/- error
-        error = getError(angle);
-
-        if (Math.abs(error) <= HEADING_THRESHOLD) {
-            steer = 0.0;
-            leftSpeed = 0.0;
-            rightSpeed = 0.0;
-            onTarget = true;
-        } else {
-            steer = getSteer(error, PCoeff);
-            rightSpeed = speed * steer;
-            leftSpeed = -rightSpeed;
-        }
-
-
-        // Send desired speeds to motors.
-        //robot.leftDrive.setPower(leftSpeed);
-        // robot.rightDrive.setPower(rightSpeed);
-
-
-        // Dylan - four wheel Send desired speeds to motors
-        baseFrontLeftMotor.setPower(leftSpeed);
-        baseFrontRightMotor.setPower(rightSpeed);
-        baseBackLeftMotor.setPower(leftSpeed);
-        baseBackRightMotor.setPower(rightSpeed);
-
-        // Display it for the driver.
-        telemetry.addData("Target", "%5.2f", angle);
-        telemetry.addData("Err/St", "%5.2f/%5.2f", error, steer);
-        telemetry.addData("Speed.", "%5.2f:%5.2f", leftSpeed, rightSpeed);
-
-        return onTarget;
+/*
+    public double getSteer(double error, double PCoeff) {
+        return Range.clip(error * PCoeff, -1, 1);
     }
-    */
-
+*/
     /**
      * getError determines the error between the target angle and the robot's current heading
      *
@@ -760,17 +863,3 @@ public class JaguarFTCPushbotAutoDriveByGyro_Linear extends LinearOpMode {
     }
 
     */
-
-    /**
-     * returns desired steering force.  +/- 1 range.  +ve = steer left
-     *
-     * @param error  Encoder counts
-     * @param PCoeff Proportional Gain Coefficient
-     * @return
-     */
-    /*
-    public double getSteer(double error, double PCoeff) {
-        return Range.clip(error * PCoeff, -1, 1);
-    }
-    */
-}
