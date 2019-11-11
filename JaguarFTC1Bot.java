@@ -29,25 +29,19 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import android.text.method.Touch;
-
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
 
 /**
  * This is NOT an opmode.
@@ -67,22 +61,27 @@ public class JaguarFTC1Bot
     public double globalAngle;
 
     // set for four wheel Mecanum motor used by team
-    public DcMotor baseFrontLeftMotor = null; // Front Left base motor port 0
-    public DcMotor baseFrontRightMotor = null; // Front Right base motor port 1
-    public DcMotor baseBackLeftMotor = null; // Back Left base motor port 2
-    public DcMotor baseBackRightMotor = null; // Back Right base motor port 3
+    public DcMotor baseFrontLeftMotor = null; // Front Left base motor
+    public DcMotor baseFrontRightMotor = null; // Front Right base motor
+    public DcMotor baseBackLeftMotor = null; // Back Left base motor
+    public DcMotor baseBackRightMotor = null; // Back Right base motor
 
-//    public DcMotor leftLiftMotor = null;
-//    public DcMotor rightLiftMotor = null;
+    public DcMotor leftLiftMotor = null;
+    public DcMotor rightLiftMotor = null;
 
     public ColorSensor sensorColor = null;
     public DistanceSensor sensorDistance = null;
     public TouchSensor sensorTouch = null;
     public Servo slideServo = null;
     public Servo clawServo = null;
+    public Servo clawheadServo = null;
+
+    private boolean testBot = false;
 
     static final double LATCH_OPEN_POS = 0.7;     // The servo position to open latch
     static final double LATCH_CLOSE_POS = 0.0;  // The servo position to close latch
+    boolean clawOpen = true;
+    boolean clawHeadHorizontal = true;
 
     /* local OpMode members. */
     HardwareMap hardwareMap           =  null;
@@ -132,33 +131,51 @@ public class JaguarFTC1Bot
 */
 
         // Get motors for base and lift ready
+        if (!testBot) {
+            leftLiftMotor = hardwareMap.get(DcMotor.class, "leftLiftMotor");
+            rightLiftMotor = hardwareMap.get(DcMotor.class, "rightLiftMotor");
+            leftLiftMotor.setDirection(DcMotor.Direction.FORWARD);
+            rightLiftMotor.setDirection(DcMotor.Direction.REVERSE);
+            leftLiftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            rightLiftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            leftLiftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); // We want lift motor to run at the giving power, not the giving speed. So we can control the holding power
+            rightLiftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            telemetry.addData("Lift Encoder", "L: %7d R: %7d",
+//                    leftLiftMotor.getCurrentPosition(),
+//                    rightLiftMotor.getCurrentPosition());
+        }
+
         baseFrontLeftMotor = hardwareMap.get(DcMotor.class, "baseFrontLeftMotor");
         baseFrontRightMotor = hardwareMap.get(DcMotor.class, "baseFrontRightMotor");
         baseBackLeftMotor = hardwareMap.get(DcMotor.class, "baseBackLeftMotor");
         baseBackRightMotor = hardwareMap.get(DcMotor.class, "baseBackRightMotor");
 
-//        leftLiftMotor = hardwareMap.get(DcMotor.class, "leftLiftMotor");
-//        rightLiftMotor = hardwareMap.get(DcMotor.class, "rightLiftMotor");
-
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-/*
-        baseFrontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        baseFrontRightMotor.setDirection(DcMotor.Direction.FORWARD);
-        baseBackLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        baseBackRightMotor.setDirection(DcMotor.Direction.FORWARD);
-*/
-        // For testBot, Core Hex Motors
-        baseFrontLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        baseFrontRightMotor.setDirection(DcMotor.Direction.REVERSE);
-        baseBackLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        baseBackRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        if (!testBot) {
+            baseFrontLeftMotor.setDirection(DcMotor.Direction.FORWARD);
+            baseFrontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+            baseBackLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+            baseBackRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        }
+        else {
+            // For testBot, Core Hex Motors
+            baseFrontLeftMotor.setDirection(DcMotor.Direction.FORWARD);
+            baseFrontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+            baseBackLeftMotor.setDirection(DcMotor.Direction.FORWARD);
+            baseBackRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
 
         // Ensure the robot it stationary, then reset the encoders and calibrate the gyro.
         baseFrontLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseFrontRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseBackLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseBackRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Set to run at constant speed
+        baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // get a reference to the color sensor.
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
@@ -172,8 +189,14 @@ public class JaguarFTC1Bot
         // Get servo ready
         slideServo = hardwareMap.get(Servo.class, "slideServo");
         clawServo = hardwareMap.get(Servo.class, "clawServo");
+        clawOpen = true;
+        clawheadServo = hardwareMap.get(Servo.class, "clawheadServo");
+        clawHeadHorizontal = true;
         slideServo.setPosition(LATCH_CLOSE_POS);
-        clawServo.setPosition(LATCH_CLOSE_POS);
+        //clawServo.setDirection(Servo.Direction.REVERSE);
+        //clawServo.setPosition(LATCH_OPEN_POS);
+        //clawheadServo.setDirection(Servo.Direction.FORWARD);
+        //clawheadServo.setPosition(LATCH_OPEN_POS);
 
         // Initialize gyro
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
