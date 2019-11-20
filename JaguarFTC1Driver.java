@@ -43,6 +43,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
 
@@ -56,13 +57,12 @@ import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
  * This hardware class assumes the following device names have been configured on the robot:
  * Note:  All names are lower case and some have single spaces between words.
  */
-public class JaguarFTC1Driver
-{
+public class JaguarFTC1Driver {
     /* Public OpMode members. */
     /* Declare OpMode members. */
-    static final double COUNTS_PER_MOTOR_REV = 1440;    // eg: TETRIX Motor Encoder
-    static final double DRIVE_GEAR_REDUCTION = 2.0;     // This is < 1.0 if geared UP
-    static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
+    //static final double COUNTS_PER_MOTOR_REV = 1440;    // eg: TETRIX Motor Encoder
+    //static final double DRIVE_GEAR_REDUCTION = 2.0;     // This is < 1.0 if geared UP
+    //static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     //static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
     //        (WHEEL_DIAMETER_INCHES * 3.1415);
 
@@ -72,9 +72,24 @@ public class JaguarFTC1Driver
     static final double SERVO_INIT_POSITION = 0.0;  // The servo init position
 
     // For testBot, Core Hex Motors
-    static final double COUNTS_PER_INCH = 50;
-    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 75;
-    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 75;
+    static final double COUNTS_PER_INCH_FORWARD = 69.4; //69;
+    static final double COUNTS_PER_INCH_BACKWARD = 70.3; //69;
+    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 75.8; //75;
+    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 76.8; //75;
+
+    static final double LIFT_HOLDING_POWER = 0.2;
+
+    // when the robot moves close to the stones (prior to pickup), the robot stops at this distance from the stones.
+    static public final float STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES = 30F;
+    static public final int DISTANCE_CODE_CLOSE = 0;
+    static public final int DISTANCE_CODE_SLOWDOWN = 1;
+    static public final int DISTANCE_CODE_FAR = 2;
+    static public final double forwardSpeed = 0.2;
+    static public final double slowdownSpeed = 0.1;
+
+    static public final double DGREE_TOLERANCE = 5.0;
+    static public final double fastTurnPower = 0.4;
+    static public final double slowTurnPower = 0.1;
 
     /* local OpMode members. */
     JaguarFTC1Bot robot = null;
@@ -82,7 +97,7 @@ public class JaguarFTC1Driver
     //private ElapsedTime period  = new ElapsedTime();
 
     /* Constructor */
-    public JaguarFTC1Driver(JaguarFTC1Bot arobot, LinearOpMode aopmode){
+    public JaguarFTC1Driver(JaguarFTC1Bot arobot, LinearOpMode aopmode) {
         robot = arobot;
         opmode = aopmode;
     }
@@ -90,33 +105,36 @@ public class JaguarFTC1Driver
 
     /**
      * See if we are moving in a straight line and if not return a power correction value.
+     * @param angleRobotToFace, this is the global angle that we want to maintain. During init, the robot is facing 0 degree.
+     *                     CCW from 0, the angle is from 0 to 180. CW from 0, the angle is from 0 to -180
      * @return Power adjustment, + is adjust left - is adjust right.
      */
-    public double checkDirection()
-    {
+    public double checkDirection(float angleRobotToFace) {
         // The gain value determines how sensitive the correction is to direction changes.
         // You will have to experiment with your robot to get small smooth direction changes
         // to stay on a straight line.
-        double correction, globalAngle, gain = .01;
+        double correction, globalAngle, gain = 0.01;
 
         globalAngle = getGlobalAngle();
 
-        if (globalAngle == 0)
+        if (globalAngle == angleRobotToFace)
             correction = 0;             // no adjustment.
         else
-            correction = -globalAngle;        // reverse sign of angle for correction.
+            correction = -(globalAngle-angleRobotToFace);        // reverse sign of angle for correction.
 
         correction = correction * gain;
+        //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+        //opmode.telemetry.update();
 
         return correction;
     }
 
     /**
      * Get current cumulative angle rotation from last reset.
+     *
      * @return Angle in degrees. + = left, - = right.
      */
-    public double getGlobalAngle()
-    {
+    public double getGlobalAngle() {
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
         // We have to process the angle because the imu works in euler angles so the Z axis is
         // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
@@ -149,11 +167,10 @@ public class JaguarFTC1Driver
      *
      * @param speed    Target speed for forward motion.  Should allow for _/- variance for adjusting heading
      * @param distance Distance (in inches) to move from current position.  Negative distance means move backwards.
-     * param angle    Absolute Angle (in Degrees) relative to last gyro reset.
+     *                 param angle    Absolute Angle (in Degrees) relative to last gyro reset.
      *                 If a relative angle is required, add/subtract from current heading.
      */
-    public void driveSidewayRight(double speed,
-                                      double distance) {
+    public void driveSidewayRight(double speed, double distance, float angleRobotToFace) {
 
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -161,10 +178,7 @@ public class JaguarFTC1Driver
         int newBackRightTarget;
 
         int moveCounts;
-        double correction=0;
-
-        // Reset gyro
-        robot.resetAngle();
+        double correction = 0;
 
         // Four wheel Mecanum motor determine new target position, and pass to motor controller
 
@@ -202,15 +216,14 @@ public class JaguarFTC1Driver
         robot.baseFrontRightMotor.setPower(speed);
 
         // keep looping while we are still active, and BOTH motors are running.
-        while ( robot.baseBackRightMotor.isBusy() && robot.baseFrontLeftMotor.isBusy() &&
+        while (robot.baseBackRightMotor.isBusy() && robot.baseFrontLeftMotor.isBusy() &&
                 robot.baseBackLeftMotor.isBusy() && robot.baseFrontRightMotor.isBusy()) {
 
             // Use gyro to drive in a straight line.
-            correction = checkDirection();
+            correction = checkDirection(angleRobotToFace);
 
-//                opmode.telemetry.addData("Angle ", robot.globalAngle);
-//                opmode.telemetry.addData("Correction ", correction);
-//                opmode.telemetry.update();
+            //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+            //opmode.telemetry.update();
 
             robot.baseBackLeftMotor.setPower(speed + correction);
             robot.baseBackRightMotor.setPower(speed + correction);
@@ -232,8 +245,7 @@ public class JaguarFTC1Driver
         robot.baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void driveSidewayLeft(double speed,
-                                  double distance) {
+    public void driveSidewayLeft(double speed, double distance, float angleRobotToFace) {
 
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -241,10 +253,7 @@ public class JaguarFTC1Driver
         int newBackRightTarget;
 
         int moveCounts;
-        double correction=0;
-
-        // Reset gyro
-        robot.resetAngle();
+        double correction = 0;
 
         // Four wheel Mecanum motor determine new target position, and pass to motor controller
 
@@ -280,15 +289,14 @@ public class JaguarFTC1Driver
         robot.baseFrontRightMotor.setPower(speed);
 
         // keep looping while we are still active, and BOTH motors are running.
-        while ( robot.baseBackRightMotor.isBusy() && robot.baseFrontLeftMotor.isBusy() &&
+        while (robot.baseBackRightMotor.isBusy() && robot.baseFrontLeftMotor.isBusy() &&
                 robot.baseBackLeftMotor.isBusy() && robot.baseFrontRightMotor.isBusy()) {
 
             // Use gyro to drive in a straight line.
-            correction = checkDirection();
+            correction = checkDirection(angleRobotToFace);
 
-//                opmode.telemetry.addData("Angle ", robot.globalAngle);
-//                opmode.telemetry.addData("Correction ", correction);
-//                opmode.telemetry.update();
+            //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+            //opmode.telemetry.update();
 
             robot.baseBackLeftMotor.setPower(speed - correction);
             robot.baseBackRightMotor.setPower(speed - correction);
@@ -310,11 +318,11 @@ public class JaguarFTC1Driver
         robot.baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void driveSideway(double speed, double distance) {
-        if (distance<0)
-            driveSidewayLeft(speed, -distance);
-        else if (distance>0)
-            driveSidewayRight(speed, distance);
+    public void driveSideway(double speed, double distance, float angleRobotToFace) {
+        if (distance < 0)
+            driveSidewayLeft(speed, -distance, angleRobotToFace);
+        else if (distance > 0)
+            driveSidewayRight(speed, distance, angleRobotToFace);
     }
 
     /**
@@ -325,12 +333,11 @@ public class JaguarFTC1Driver
      *
      * @param speed    Target speed for forward motion.  Should allow for _/- variance for adjusting heading
      * @param distance Distance (in inches) to move from current position.  Negative distance means move backwards.
-//     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
+     *                 //     * @param angle    Absolute Angle (in Degrees) relative to last gyro reset.
      *                 0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
      *                 If a relative angle is required, add/subtract from current heading.
      */
-    public void driveForward(double speed,
-                          double distance) {
+    public void driveForward(double speed, double distance, float angleRobotToFace) {
 
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -340,8 +347,6 @@ public class JaguarFTC1Driver
         int moveCounts;
         double correction;
 
-        robot.resetAngle();
-
         // Four wheel Mecanum motor determine new target position, and pass to motor controller
 //            opmode.telemetry.addData("Position", "L: %7d %7d R: %7d %7d",
 //                    robot.baseFrontLeftMotor.getCurrentPosition(),
@@ -350,7 +355,7 @@ public class JaguarFTC1Driver
 //                    robot.baseBackRightMotor.getCurrentPosition());
         //opmode.telemetry.update();
 
-        moveCounts = (int) (distance * COUNTS_PER_INCH);
+        moveCounts = (int) (distance * COUNTS_PER_INCH_FORWARD);
         newFrontLeftTarget = robot.baseFrontLeftMotor.getCurrentPosition() + moveCounts;
         newFrontRightTarget = robot.baseFrontRightMotor.getCurrentPosition() + moveCounts;
         newBackLeftTarget = robot.baseBackLeftMotor.getCurrentPosition() + moveCounts;
@@ -387,11 +392,10 @@ public class JaguarFTC1Driver
                         robot.baseBackLeftMotor.isBusy() && robot.baseBackRightMotor.isBusy())) {
 
             // Use gyro to drive in a straight line.
-            correction = checkDirection();
+            correction = checkDirection(angleRobotToFace);
 
-//                opmode.telemetry.addData("Angle ", robot.globalAngle);
-//                opmode.telemetry.addData("Correction ", correction);
-//                opmode.telemetry.update();
+            //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+            //opmode.telemetry.update();
 
             robot.baseFrontLeftMotor.setPower(speed - correction);
             robot.baseFrontRightMotor.setPower(speed + correction);
@@ -413,8 +417,7 @@ public class JaguarFTC1Driver
         robot.baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void driveBackward(double speed,
-                             double distance) {
+    public void driveBackward(double speed, double distance, float angleRobotToFace) {
 
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -424,8 +427,6 @@ public class JaguarFTC1Driver
         int moveCounts;
         double correction;
 
-        robot.resetAngle();
-
         // Four wheel Mecanum motor determine new target position, and pass to motor controller
 //            opmode.telemetry.addData("Position", "L: %7d %7d R: %7d %7d",
 //                    robot.baseFrontLeftMotor.getCurrentPosition(),
@@ -434,7 +435,7 @@ public class JaguarFTC1Driver
 //                    robot.baseBackRightMotor.getCurrentPosition());
         //opmode.telemetry.update();
 
-        moveCounts = (int) (distance * COUNTS_PER_INCH);
+        moveCounts = (int) (distance * COUNTS_PER_INCH_BACKWARD);
         newFrontLeftTarget = robot.baseFrontLeftMotor.getCurrentPosition() - moveCounts;
         newFrontRightTarget = robot.baseFrontRightMotor.getCurrentPosition() - moveCounts;
         newBackLeftTarget = robot.baseBackLeftMotor.getCurrentPosition() - moveCounts;
@@ -471,11 +472,10 @@ public class JaguarFTC1Driver
                         robot.baseBackLeftMotor.isBusy() && robot.baseBackRightMotor.isBusy())) {
 
             // Use gyro to drive in a straight line.
-            correction = checkDirection();
+            correction = checkDirection(angleRobotToFace);
 
-//                opmode.telemetry.addData("Angle ", robot.globalAngle);
-//                opmode.telemetry.addData("Correction ", correction);
-//                opmode.telemetry.update();
+            //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+            //opmode.telemetry.update();
 
             robot.baseFrontLeftMotor.setPower(speed + correction);
             robot.baseFrontRightMotor.setPower(speed - correction);
@@ -499,69 +499,61 @@ public class JaguarFTC1Driver
 
     /**
      * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
+     *
      * @param degrees Degrees to turn, + is left - is right
      */
-    public void gyroTurn(double power, int degrees)
-    {
-        double  leftSpeed, rightSpeed;
-        // restart imu movement tracking.
-        robot.resetAngle();
+    public void gyroTurn(double degrees) {
 
-        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
-        // clockwise (right).
-
-        if (degrees < 0)
-        {   // turn right.
-            leftSpeed = power;
-            rightSpeed = -power;
-        }
-        else if (degrees > 0)
-        {   // turn left.
-            leftSpeed = -power;
-            rightSpeed = power;
-        }
-        else return;
-
-        // set power to rotate.
-        robot.baseFrontLeftMotor.setPower(leftSpeed);
-        robot.baseFrontRightMotor.setPower(rightSpeed);
-        robot.baseBackLeftMotor.setPower(leftSpeed);
-        robot.baseBackRightMotor.setPower(rightSpeed);
-
-
+        double degreeDiff = degrees-getGlobalAngle();
         // rotate until turn is completed.
-        if (degrees < 0)
-        {
-            // On right turn we have to get off zero first.
-            while (getGlobalAngle() == 0) {}
+        while (Math.abs(degreeDiff) > DGREE_TOLERANCE) {
+            if (Math.abs(degreeDiff) > 10) { // Fast turn
+                if (degreeDiff>0) { // Left turn
+                    robot.baseFrontLeftMotor.setPower(-fastTurnPower);
+                    robot.baseFrontRightMotor.setPower(fastTurnPower);
+                    robot.baseBackLeftMotor.setPower(-fastTurnPower);
+                    robot.baseBackRightMotor.setPower(fastTurnPower);
+                }
+                else { // Right turn
+                    robot.baseFrontLeftMotor.setPower(fastTurnPower);
+                    robot.baseFrontRightMotor.setPower(-fastTurnPower);
+                    robot.baseBackLeftMotor.setPower(fastTurnPower);
+                    robot.baseBackRightMotor.setPower(-fastTurnPower);
+                }
+            }
+            else { // Slow turn
+                if (degreeDiff>0) { // Left turn
+                    robot.baseFrontLeftMotor.setPower(-slowTurnPower);
+                    robot.baseFrontRightMotor.setPower(slowTurnPower);
+                    robot.baseBackLeftMotor.setPower(-slowTurnPower);
+                    robot.baseBackRightMotor.setPower(slowTurnPower);
+                }
+                else { // Right turn
+                    robot.baseFrontLeftMotor.setPower(slowTurnPower);
+                    robot.baseFrontRightMotor.setPower(-slowTurnPower);
+                    robot.baseBackLeftMotor.setPower(slowTurnPower);
+                    robot.baseBackRightMotor.setPower(-slowTurnPower);
+                }
+            }
 
-            while (getGlobalAngle() > degrees) {}
+            degreeDiff = degrees-getGlobalAngle();
         }
-        else    // left turn.
-            while (getGlobalAngle() < degrees) {}
 
         // turn the motors off.
-
         robot.baseFrontLeftMotor.setPower(0);
         robot.baseFrontRightMotor.setPower(0);
         robot.baseBackLeftMotor.setPower(0);
         robot.baseBackRightMotor.setPower(0);
-
-        // wait for rotation to stop.
-        sleep(1000);
-
-        // reset angle tracking on new heading.
-        robot.resetAngle();
     }
 
     /**
      * Drive forward using gyro to keep the last angle.
      *
-     * @param powerOrSpeed  Desired speed of turn.
+     * @param powerOrSpeed Desired speed of turn.
      * @return
      */
-    public void driveForward(double powerOrSpeed) {
-        double correction = checkDirection();
+    public void driveForward(double powerOrSpeed, float angleRobotToFace) {
+        double correction = checkDirection(angleRobotToFace);
         powerOrSpeed = Range.clip(Math.abs(powerOrSpeed), 0.0, 1.0);
         robot.baseBackRightMotor.setPower(powerOrSpeed + correction);
         robot.baseFrontLeftMotor.setPower(powerOrSpeed - correction);
@@ -569,29 +561,29 @@ public class JaguarFTC1Driver
         robot.baseFrontRightMotor.setPower(powerOrSpeed + correction);
     }
 
-    public void driveBackward(double powerOrSpeed) {
-        double correction = checkDirection();
+    public void driveBackward(double powerOrSpeed, float angleRobotToFace) {
+        double correction = checkDirection(angleRobotToFace);
         powerOrSpeed = Range.clip(Math.abs(powerOrSpeed), 0.0, 1.0);
-        robot.baseBackRightMotor.setPower(-(powerOrSpeed-correction));
-        robot.baseFrontLeftMotor.setPower(-(powerOrSpeed+correction));
-        robot.baseBackLeftMotor.setPower(-(powerOrSpeed+correction));
-        robot.baseFrontRightMotor.setPower(-(powerOrSpeed-correction));
+        robot.baseBackRightMotor.setPower(-(powerOrSpeed - correction));
+        robot.baseFrontLeftMotor.setPower(-(powerOrSpeed + correction));
+        robot.baseBackLeftMotor.setPower(-(powerOrSpeed + correction));
+        robot.baseFrontRightMotor.setPower(-(powerOrSpeed - correction));
     }
 
-    public void driveSidewayLeft(double powerOrSpeed) {
-        double correction = checkDirection();
+    public void driveSidewayLeft(double powerOrSpeed, float angleRobotToFace) {
+        double correction = checkDirection(angleRobotToFace);
         powerOrSpeed = Range.clip(Math.abs(powerOrSpeed), 0.0, 1.0);
-        robot.baseFrontLeftMotor.setPower(-(powerOrSpeed+correction));
-        robot.baseFrontRightMotor.setPower(powerOrSpeed+correction);
-        robot.baseBackLeftMotor.setPower(powerOrSpeed-correction);
-        robot.baseBackRightMotor.setPower(-(powerOrSpeed-correction));
+        robot.baseFrontLeftMotor.setPower(-(powerOrSpeed + correction));
+        robot.baseFrontRightMotor.setPower(powerOrSpeed + correction);
+        robot.baseBackLeftMotor.setPower(powerOrSpeed - correction);
+        robot.baseBackRightMotor.setPower(-(powerOrSpeed - correction));
     }
 
-    public void driveSidewayRight(double powerOrSpeed) {
-        double correction = checkDirection();
+    public void driveSidewayRight(double powerOrSpeed, float angleRobotToFace) {
+        double correction = checkDirection(angleRobotToFace);
         powerOrSpeed = Range.clip(Math.abs(powerOrSpeed), 0.0, 1.0);
-        robot.baseFrontLeftMotor.setPower(powerOrSpeed-correction);
-        robot.baseFrontRightMotor.setPower(-(powerOrSpeed-correction));
+        robot.baseFrontLeftMotor.setPower(powerOrSpeed - correction);
+        robot.baseFrontRightMotor.setPower(-(powerOrSpeed - correction));
         robot.baseBackLeftMotor.setPower(-(powerOrSpeed + correction));
         robot.baseBackRightMotor.setPower(powerOrSpeed + correction);
     }
@@ -606,8 +598,7 @@ public class JaguarFTC1Driver
     /**
      * Move claw forward (power on slide servo for a specific time )
      *
-     * @param clawForwardTime  Desired time to slide servo.
-     *
+     * @param clawForwardTime Desired time to slide servo.
      */
     public void moveClawForward(int clawForwardTime) {
         // Move claw forward (power on slide servo for a specific time in milliseconds,
@@ -629,21 +620,26 @@ public class JaguarFTC1Driver
         // Turn claw head 90 degree
         robot.clawheadServo.setDirection(Servo.Direction.FORWARD);
         robot.clawheadServo.setPosition(SERVO_SET_POSITION);
+        sleep(300);
+
     }
 
     public void turnClawHorizontal() {
         robot.clawheadServo.setDirection(Servo.Direction.REVERSE);
         robot.clawheadServo.setPosition(SERVO_SET_POSITION);
+        sleep(300);
     }
 
     public void closeClaw() {
         robot.clawServo.setDirection(Servo.Direction.REVERSE);
         robot.clawServo.setPosition(SERVO_SET_POSITION);
+        sleep(300);
     }
 
     public void openClaw() {
         robot.clawServo.setDirection(Servo.Direction.FORWARD);
         robot.clawServo.setPosition(SERVO_SET_POSITION);
+        sleep(300);
     }
 
 
@@ -662,6 +658,147 @@ public class JaguarFTC1Driver
         }
     }
 
+    public void grabFoundation(int state) {
+        if (state == 1) {
+            robot.grabberUp = true;
+            robot.foudationGrabberServo.setDirection(Servo.Direction.FORWARD);
+            robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
+        }
+        if (state == -1) {
+            robot.grabberUp = false;
+            robot.foudationGrabberServo.setDirection(Servo.Direction.REVERSE);
+            robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
+        }
+    }
+
+    public void liftUp(double speed, int encoderCount) {
+        int leftLiftTarget = robot.leftLiftMotor.getCurrentPosition() + encoderCount;
+        int rightLiftTarget = robot.rightLiftMotor.getCurrentPosition() + encoderCount;
+
+        leftLiftTarget = Range.clip(Math.abs(leftLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
+        rightLiftTarget = Range.clip(Math.abs(rightLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
+
+        robot.leftLiftMotor.setTargetPosition(leftLiftTarget);
+        robot.rightLiftMotor.setTargetPosition(rightLiftTarget);
+
+        robot.leftLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.rightLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        speed = Range.clip(Math.abs(speed), 0.0, 1.0);
+
+        robot.leftLiftMotor.setPower(speed);
+        robot.rightLiftMotor.setPower(speed);
+
+        while (opmode.opModeIsActive() && (robot.leftLiftMotor.isBusy() && robot.rightLiftMotor.isBusy())) {
+            robot.leftLiftMotor.setPower(speed);
+            robot.rightLiftMotor.setPower(speed);
+        }
+
+        if (leftLiftTarget > 5 || rightLiftTarget > 5) {
+            robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
+            robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
+        } else {
+            robot.leftLiftMotor.setPower(0);
+            robot.rightLiftMotor.setPower(0);
+        }
+    }
+
+    public void liftDown(double speed, int encoderCount) {
+        int leftLiftTarget = robot.leftLiftMotor.getCurrentPosition() - encoderCount;
+        int rightLiftTarget = robot.rightLiftMotor.getCurrentPosition() - encoderCount;
+
+        leftLiftTarget = Range.clip(Math.abs(leftLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
+        rightLiftTarget = Range.clip(Math.abs(rightLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
+
+        robot.leftLiftMotor.setTargetPosition(leftLiftTarget);
+        robot.rightLiftMotor.setTargetPosition(rightLiftTarget);
+
+        robot.leftLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.rightLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        speed = Range.clip(Math.abs(speed), 0.0, 1.0);
+
+        robot.leftLiftMotor.setPower(speed);
+        robot.rightLiftMotor.setPower(speed);
+
+        while (opmode.opModeIsActive() && (robot.leftLiftMotor.isBusy() && robot.rightLiftMotor.isBusy())) {
+            robot.leftLiftMotor.setPower(speed);
+            robot.rightLiftMotor.setPower(speed);
+        }
+
+        if (leftLiftTarget > 5 || rightLiftTarget > 5) {
+            robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
+            robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
+        } else {
+            robot.leftLiftMotor.setPower(0);
+            robot.rightLiftMotor.setPower(0);
+        }
+    }
+
+    public void liftUp(double power) {
+        robot.leftLiftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rightLiftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        while (robot.leftLiftMotor.getCurrentPosition() < 30) {
+            robot.leftLiftMotor.setPower(power);
+            robot.rightLiftMotor.setPower(power);
+        }
+
+        robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
+        robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
+    }
+
+    public void liftDown(double power) {
+        robot.leftLiftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.rightLiftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        while (robot.leftLiftMotor.getCurrentPosition() > -10) {
+            robot.leftLiftMotor.setPower(power);
+            robot.rightLiftMotor.setPower(power);
+        }
+
+        robot.leftLiftMotor.setPower(0);
+        robot.rightLiftMotor.setPower(0);
+    }
+
+    public void lightSensorDriveToObject(float angleRobotToFace) {
+        int distanceCode = DISTANCE_CODE_FAR;
+
+        while ((distanceCode != DISTANCE_CODE_CLOSE)) {
+            if (distanceCode == DISTANCE_CODE_SLOWDOWN) {
+                driveForward(slowdownSpeed, angleRobotToFace);
+            }
+            else {
+                driveForward(forwardSpeed, angleRobotToFace);
+            }
+//            sleep(100);
+            distanceCode = isSkystoneClose();
+        }
+
+        stop();
+    }
+
+    /** Check if stone is close to the robot
+     *
+     * @return yes or no
+     */
+    private int isSkystoneClose() {
+        int rval = DISTANCE_CODE_CLOSE;
+
+        double distance = robot.sensorDistance.getDistance(DistanceUnit.CM);
+
+        if ((distance == DistanceSensor.distanceOutOfRange)
+                || Double.isNaN(distance)
+                || distance > 2 * STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES) {
+            rval = DISTANCE_CODE_FAR;
+        } else if (distance > STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES) {
+            // slow down
+            rval = DISTANCE_CODE_SLOWDOWN;
+            //opmode.telemetry.addData("Slow down: ", distance);
+        }
+
+        return rval;
+    }
 
 }
 

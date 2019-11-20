@@ -57,9 +57,9 @@ import android.os.Environment;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "JaguarFTC1Autonomous_Red", group = "Concept")
+@Autonomous(name = "JaguarFTC1Autonomous_Blue", group = "Concept")
 //@Disabled
-public class JaguarFTC1Autonomous_Red extends LinearOpMode {
+public class JaguarFTC1Autonomous_Blue extends LinearOpMode {
     private static final String TFOD_MODEL_ASSET = "Skystone.tflite";
     private static final String LABEL_STONE = "Stone";
     private static final String LABEL_SKYSTONE = "Skystone";
@@ -220,8 +220,8 @@ public class JaguarFTC1Autonomous_Red extends LinearOpMode {
         sleep(50);
 
         //      Step 2.4: Moving to other side of the field
-        driver.gyroTurn(FACING_EAST);
-        driver.driveForward(movingSpeed, distanceToOtherSide, FACING_EAST); // Moving 65 inches to make sure the one at the right can be delivered
+        driver.gyroTurn(FACING_WEST);
+        driver.driveForward(movingSpeed, distanceToOtherSide, FACING_WEST); // Moving 65 inches to make sure the one at the right can be delivered
 
         //      Step 2.5: Drop the stone
         clawDropStone();
@@ -236,7 +236,7 @@ public class JaguarFTC1Autonomous_Red extends LinearOpMode {
             driveBackConstant = STONE_WIDTH; // Since the other Skystone is the first one by the wall, we just pick up a Stone.
         }
         double distanceToSecondSkystone = distanceToOtherSide + driveBackConstant;
-        driver.driveSidewayLeft(movingSpeed, distanceToSecondSkystone, FACING_NORTH);
+        driver.driveSidewayRight(movingSpeed, distanceToSecondSkystone, FACING_NORTH);
         sleep(50);
 
 
@@ -255,8 +255,8 @@ public class JaguarFTC1Autonomous_Red extends LinearOpMode {
         sleep(50);
 
         //      Step 3.4: Moving to other side of the field
-        driver.gyroTurn(FACING_EAST);
-        driver.driveForward(movingSpeed, distanceToSecondSkystone,FACING_EAST);
+        driver.gyroTurn(FACING_WEST);
+        driver.driveForward(movingSpeed, distanceToSecondSkystone,FACING_WEST);
 
         //      Step 3.5: Drop the stone
         clawDropStone();
@@ -272,7 +272,7 @@ public class JaguarFTC1Autonomous_Red extends LinearOpMode {
 
 
         // Phase 4: parking
-        driver.driveSidewayLeft(movingSpeed, distanceToPark, FACING_NORTH);
+        driver.driveSidewayRight(movingSpeed, distanceToPark, FACING_NORTH);
 
         if (tfod != null) {
             tfod.shutdown();
@@ -405,13 +405,13 @@ public class JaguarFTC1Autonomous_Red extends LinearOpMode {
     private void alignWithSkystone(float skystoneOffset, float angleRobotToFace) {
         if (skystoneOffset>OFFSET_THRESHHOLD) { // Skystone is at the right, which also means the other Skystone is the first one by the wall.
             skystoneOffset = STONE_WIDTH;
-            distanceToPark += STONE_WIDTH;
-            firstStone = false;
+            distanceToPark -= STONE_WIDTH;
+            firstStone = true;
         }
         else if (skystoneOffset<-OFFSET_THRESHHOLD) { // Skystone is at the left
             skystoneOffset = -STONE_WIDTH;
-            distanceToPark -= STONE_WIDTH;
-            firstStone = true;
+            distanceToPark += STONE_WIDTH;
+            firstStone = false;
         }
         else
             skystoneOffset=0;

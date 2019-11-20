@@ -43,7 +43,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-/*
+/**
  * This is NOT an opmode.
  *
  * This class can be used to define all the specific hardware for a single robot.
@@ -55,7 +55,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  */
 public class JaguarFTC1Bot
 {
-    // Public OpMode members.
+    /* Public OpMode members. */
     public BNO055IMU gyro = null;
     public Orientation lastAngles = new Orientation();
     public double globalAngle;
@@ -66,46 +66,42 @@ public class JaguarFTC1Bot
     public DcMotor baseBackLeftMotor = null; // Back Left base motor
     public DcMotor baseBackRightMotor = null; // Back Right base motor
 
-    // lift motors
     public DcMotor leftLiftMotor = null;
     public DcMotor rightLiftMotor = null;
 
-    // sensors
     public ColorSensor sensorColor = null;
     public DistanceSensor sensorDistance = null;
     public TouchSensor sensorTouch = null;
-
-    // servos
     public Servo slideServo = null;
     public Servo clawServo = null;
     public Servo clawheadServo = null;
+    public Servo foudationGrabberServo = null;
 
-    // robot state constants
-    private boolean testBot = false;  //motors will not be initialized if true
+    private boolean testBot = false;
 
     static final double LATCH_OPEN_POS = 0.7;     // The servo position to open latch
     static final double LATCH_CLOSE_POS = 0.0;  // The servo position to close latch
+    static final int MAX_LIFT_ENCODER_VAL = 93; // Test value
     boolean clawOpen = true;
     boolean clawHeadHorizontal = true;
+    boolean grabberUp = true;
 
-    // local OpMode members
-    HardwareMap hardwareMap = null;
+    /* local OpMode members. */
+    HardwareMap hardwareMap           =  null;
     Telemetry telemetry = null;
     //private ElapsedTime period  = new ElapsedTime();
 
-    // Constructor
+    /* Constructor */
     public JaguarFTC1Bot(){
 
     }
 
-    // Initialize standard Hardware interfaces
+    /* Initialize standard Hardware interfaces */
     public void robotInit(HardwareMap ahwMap, Telemetry atelemetry)
     {
         hardwareMap = ahwMap;
         telemetry = atelemetry;
-
 /*
-        // This code has been deprecated since we now rely on TensorFlow for our Autonomous
         // read data from a JSON configuration file - JaguarUserControlConfig.json
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download";
 
@@ -145,9 +141,11 @@ public class JaguarFTC1Bot
             rightLiftMotor.setDirection(DcMotor.Direction.REVERSE);
             leftLiftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             rightLiftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            leftLiftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            // We want lift motor to run at the giving power, not the giving speed. So we can control the holding power
+            leftLiftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); // We want lift motor to run at the giving power, not the giving speed. So we can control the holding power
             rightLiftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            telemetry.addData("Lift Encoder", "L: %7d R: %7d",
+//                    leftLiftMotor.getCurrentPosition(),
+//                    rightLiftMotor.getCurrentPosition());
         }
 
         baseFrontLeftMotor = hardwareMap.get(DcMotor.class, "baseFrontLeftMotor");
@@ -176,7 +174,6 @@ public class JaguarFTC1Bot
         baseFrontRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseBackLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         baseBackRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
         // Set to run at constant speed
         baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -186,23 +183,20 @@ public class JaguarFTC1Bot
         // get a reference to the color sensor.
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
 
-        // get a reference to the distance sensor that is built-into the color sensor
+        // get a reference to the distance sensor that shares the same name.
         sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_color_distance");
 
-        // get a reference to the touch sensor
-        // if you are having problems with this, know that touch sensors must be in the n+1 field
+        //get a reference to the touch sensor
         sensorTouch = hardwareMap.get(TouchSensor.class, "touchsensor");
 
         // Get servo ready
         slideServo = hardwareMap.get(Servo.class, "slideServo");
         clawServo = hardwareMap.get(Servo.class, "clawServo");
-        clawheadServo = hardwareMap.get(Servo.class, "clawheadServo");
-
-        // Update booleans
         clawOpen = true;
+        clawheadServo = hardwareMap.get(Servo.class, "clawheadServo");
         clawHeadHorizontal = true;
-
-        // Close latch
+        foudationGrabberServo = hardwareMap.get(Servo.class, "foudationGrabberServo");
+        grabberUp = true;
         slideServo.setPosition(LATCH_CLOSE_POS);
         //clawServo.setDirection(Servo.Direction.REVERSE);
         //clawServo.setPosition(LATCH_OPEN_POS);
@@ -221,12 +215,14 @@ public class JaguarFTC1Bot
         // and named "imu".
         gyro = hardwareMap.get(BNO055IMU.class, "gyro");
         gyro.initialize(parameters);
+        resetAngle();
 
         // Send telemetry message to alert driver that we are calibrating;
-        telemetry.addData(">", "Calibrating Gyro");
+        telemetry.addData(">", "Calibrating Gyro");    //
         telemetry.update();
 
         // make sure the imu gyro is calibrated before continuing.
+        //while (!isStopRequested() && !gyro.isGyroCalibrated())
         while (!gyro.isGyroCalibrated())
         {
             try {
@@ -241,10 +237,13 @@ public class JaguarFTC1Bot
         telemetry.update();
     }
 
-    //Resets the cumulative angle tracking to zero.
+    /**
+     * Resets the cumulative angle tracking to zero.
+     */
     public void resetAngle()
     {
         lastAngles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
         globalAngle = 0;
     }
  }
