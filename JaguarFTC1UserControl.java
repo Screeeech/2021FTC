@@ -61,7 +61,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
     double LIFT_DOWN_POWER = -0.2;
     double MIN_HOLDING_ENCODER_VAL = 15;
     double LIFT_HOLDING_POWER = 0.2;
-    int MAX_LIFT_ENCODER_VAL = 93; // Test result when the arm is stretched to the longest. Left: 1750, Right: 2100
+    //int MAX_LIFT_ENCODER_VAL = 93; // Test result when the arm is stretched to the longest. Left: 1750, Right: 2100
 
     static final double TOLERANCE = 0.15;
     static final double VEX_MOTOR_RUN = 0.7;     // The servo position to open latch
@@ -71,6 +71,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
 
     private boolean clawButtonReleased = true;
     private boolean clawHeadButtonRelease = true;
+    private boolean foundationGrabberButtonRelease = true;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -127,7 +128,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
 
             if (gamepad1.dpad_up) {
 
-                if (leftLiftMotor_encoderVal>=(MAX_LIFT_ENCODER_VAL*0.8)) { // Slow down if close to the longest
+                if (leftLiftMotor_encoderVal>=(JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL*0.8)) { // Slow down if close to the longest
                     robot.leftLiftMotor.setPower(LIFT_SLOW_POWER);
                     robot.rightLiftMotor.setPower(LIFT_SLOW_POWER);
                 }
@@ -182,7 +183,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
 
 
             // Claw Head Control
-            //                      <<<<< Trigger >>>>>
+            //                      <<<<< Left Trigger >>>>>
             // Toggle the latch open and close
             //
             // If Left Bumper has been pressed and still being pressed, we consider the latch is performing toggle action now.
@@ -206,6 +207,31 @@ public class JaguarFTC1UserControl extends LinearOpMode {
                 clawHeadButtonRelease = true;
             }
 
+
+            // Foundation Grabber Control
+            //                      <<<<< Right Trigger >>>>>
+            // Toggle the latch open and close
+            //
+            // If Left Bumper has been pressed and still being pressed, we consider the latch is performing toggle action now.
+            // No further action is needed.
+
+            if (gamepad1.right_trigger>0.8 && foundationGrabberButtonRelease) {
+                foundationGrabberButtonRelease = false;
+
+                if (robot.grabberUp) {
+                    robot.grabberUp = false;
+                    robot.foudationGrabberServo.setDirection(Servo.Direction.REVERSE);
+                    robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
+                }
+                else {
+                    robot.grabberUp = true;
+                    robot.foudationGrabberServo.setDirection(Servo.Direction.FORWARD);
+                    robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
+                }
+            }
+            else if (gamepad1.right_trigger<=0.8){
+                foundationGrabberButtonRelease = true;
+            }
 
 
 
