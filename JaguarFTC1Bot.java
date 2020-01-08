@@ -70,12 +70,16 @@ public class JaguarFTC1Bot
     public DcMotor rightLiftMotor = null;
 
     public ColorSensor sensorColor = null;
+    public ColorSensor parkingColorSensor = null;
     public DistanceSensor sensorDistance = null;
+    public DistanceSensor sensorRange = null;
+
     public TouchSensor sensorTouch = null;
     public Servo slideServo = null;
     public Servo clawServo = null;
     public Servo clawheadServo = null;
     public Servo foudationGrabberServo = null;
+    public Servo capstoneServo = null;
 
     private boolean testBot = false;
 
@@ -85,6 +89,7 @@ public class JaguarFTC1Bot
     boolean clawOpen = true;
     boolean clawHeadHorizontal = true;
     boolean grabberUp = true;
+    boolean capstoneLoaded = true;
 
     /* local OpMode members. */
     HardwareMap hardwareMap           =  null;
@@ -182,9 +187,12 @@ public class JaguarFTC1Bot
 
         // get a reference to the color sensor.
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
+        parkingColorSensor = hardwareMap.get(ColorSensor.class, "parkingColorSensor");
+
 
         // get a reference to the distance sensor that shares the same name.
         sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_color_distance");
+        sensorRange = hardwareMap.get(DistanceSensor.class, "sensor_range");
 
         //get a reference to the touch sensor
         sensorTouch = hardwareMap.get(TouchSensor.class, "touchsensor");
@@ -198,6 +206,10 @@ public class JaguarFTC1Bot
         foudationGrabberServo = hardwareMap.get(Servo.class, "foudationGrabberServo");
         grabberUp = true;
         slideServo.setPosition(LATCH_CLOSE_POS);
+        capstoneServo = hardwareMap.get(Servo.class, "capstoneServo");
+        capstoneServo.setDirection(Servo.Direction.FORWARD);
+        capstoneServo.setPosition(1.0);
+        capstoneLoaded = true;
         //clawServo.setDirection(Servo.Direction.REVERSE);
         //clawServo.setPosition(LATCH_OPEN_POS);
         //clawheadServo.setDirection(Servo.Direction.FORWARD);

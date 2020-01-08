@@ -58,38 +58,47 @@ import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
  * Note:  All names are lower case and some have single spaces between words.
  */
 public class JaguarFTC1Driver {
-    /* Public OpMode members. */
-    /* Declare OpMode members. */
-    //static final double COUNTS_PER_MOTOR_REV = 1440;    // eg: TETRIX Motor Encoder
-    //static final double DRIVE_GEAR_REDUCTION = 2.0;     // This is < 1.0 if geared UP
-    //static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
-    //static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-    //        (WHEEL_DIAMETER_INCHES * 3.1415);
+    // Following data needs to be changed on different floor
+    // Encoder counts for mechanum wheel to drive 1 inch. The first number in comment is the calibrated value on field. The second is the one on hard floor.
+    static final double COUNTS_PER_INCH_FORWARD = 69;       //69.4; //69;
+    static final double COUNTS_PER_INCH_BACKWARD = 69;      //70.3; //69;
+    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 75;  //75.8; //75;
+    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 75;   //76.8; //75;
+
+    static public final float HUE_THRESHOLD = 60;           //35;  //60; // Hue value for detecting Skystone image
+
+    static public final double lightSensorForwardSpeed = 0.2; //0.3;  //0.2;
+    static public final double lightSensorSlowdownSpeed = 0.2;//0.3;  //0.2;
+    static public final double slowdownSpeed = 0.1;           //0.2; //0.1;
+    static public final double movingSpeed = 0.7;             //0.8; //0.7; normal moving speed during autonomous
+    static public final double parkingSpeed = 0.5;            //0.6; //0.5;
+    static public final double HUE_FLOOR_THRESHOLD = 170000000;//200000000;
 
     static final double VEX_MOTOR_RUN = 0.7;     // The servo position to open latch
     static final double VEX_MOTOR_STOP = 0.0;
     static final double SERVO_SET_POSITION = 1.0;     // The servo set position
     static final double SERVO_INIT_POSITION = 0.0;  // The servo init position
 
-    // For testBot, Core Hex Motors
-    static final double COUNTS_PER_INCH_FORWARD = 69.4; //69;
-    static final double COUNTS_PER_INCH_BACKWARD = 70.3; //69;
-    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 75.8; //75;
-    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 76.8; //75;
-
+    static public final double LIFT_POWER = 1.0;
     static final double LIFT_HOLDING_POWER = 0.2;
 
     // when the robot moves close to the stones (prior to pickup), the robot stops at this distance from the stones.
-    static public final float STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES = 30F;
+    static public final float STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES = 15F;
     static public final int DISTANCE_CODE_CLOSE = 0;
     static public final int DISTANCE_CODE_SLOWDOWN = 1;
     static public final int DISTANCE_CODE_FAR = 2;
-    static public final double forwardSpeed = 0.2;
-    static public final double slowdownSpeed = 0.1;
 
     static public final double DGREE_TOLERANCE = 5.0;
     static public final double fastTurnPower = 0.4;
     static public final double slowTurnPower = 0.1;
+
+    static public final float FACING_NORTH = 0; // NORTH is what the robot faces during init. To the right is EAST, to the left is WEST. It won't change through out the match.
+    static public final float FACING_SOUTH = 180;
+    static public final float FACING_EAST = -90;
+    static public final float FACING_WEST = 90;
+    static public final int GRAB = 1;
+    static public final int RELEASE = -1;
+    static public final double DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION = 34.0;
 
     /* local OpMode members. */
     JaguarFTC1Bot robot = null;
@@ -671,36 +680,24 @@ public class JaguarFTC1Driver {
         }
     }
 
-    public void liftUp(double speed, int encoderCount) {
-        int leftLiftTarget = robot.leftLiftMotor.getCurrentPosition() + encoderCount;
-        int rightLiftTarget = robot.rightLiftMotor.getCurrentPosition() + encoderCount;
+    public void liftUp(double power, int encoderCount) {
+        int leftLift_encoderVal = robot.leftLiftMotor.getCurrentPosition();
+        int rightLift_encoderVal = robot.rightLiftMotor.getCurrentPosition();
+        int leftTarget_encoderVal = leftLift_encoderVal+encoderCount;
+        int rightTarget_encoderVal = rightLift_encoderVal+encoderCount;
 
-        leftLiftTarget = Range.clip(Math.abs(leftLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
-        rightLiftTarget = Range.clip(Math.abs(rightLiftTarget), 0, JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL);
+        robot.leftLiftMotor.setPower(power);
+        robot.rightLiftMotor.setPower(power);
 
-        robot.leftLiftMotor.setTargetPosition(leftLiftTarget);
-        robot.rightLiftMotor.setTargetPosition(rightLiftTarget);
-
-        robot.leftLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.rightLiftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        speed = Range.clip(Math.abs(speed), 0.0, 1.0);
-
-        robot.leftLiftMotor.setPower(speed);
-        robot.rightLiftMotor.setPower(speed);
-
-        while (opmode.opModeIsActive() && (robot.leftLiftMotor.isBusy() && robot.rightLiftMotor.isBusy())) {
-            robot.leftLiftMotor.setPower(speed);
-            robot.rightLiftMotor.setPower(speed);
+        while ((leftLift_encoderVal<leftTarget_encoderVal) && (rightLift_encoderVal<rightTarget_encoderVal)) {
+            //opmode.telemetry.addData("Lift Encoder", "L: %7d R: %7d", leftLift_encoderVal, rightLift_encoderVal);
+            //opmode.telemetry.update();
+            leftLift_encoderVal = robot.leftLiftMotor.getCurrentPosition();
+            rightLift_encoderVal = robot.rightLiftMotor.getCurrentPosition();
         }
 
-        if (leftLiftTarget > 5 || rightLiftTarget > 5) {
-            robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
-            robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
-        } else {
-            robot.leftLiftMotor.setPower(0);
-            robot.rightLiftMotor.setPower(0);
-        }
+        robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
+        robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
     }
 
     public void liftDown(double speed, int encoderCount) {
@@ -766,13 +763,35 @@ public class JaguarFTC1Driver {
 
         while ((distanceCode != DISTANCE_CODE_CLOSE)) {
             if (distanceCode == DISTANCE_CODE_SLOWDOWN) {
-                driveForward(slowdownSpeed, angleRobotToFace);
+                driveForward(lightSensorSlowdownSpeed, angleRobotToFace);
             }
             else {
-                driveForward(forwardSpeed, angleRobotToFace);
+                driveForward(lightSensorForwardSpeed, angleRobotToFace);
             }
 //            sleep(100);
             distanceCode = isSkystoneClose();
+        }
+
+        stop();
+    }
+
+    public void distanceSensorDriveToObject (double stopDistance) {
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        driveForward(movingSpeed, FACING_NORTH);
+
+        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        }
+
+        stop();
+    }
+
+    public void distanceSensorAngleDriveToObject (double stopDistance, float angleRobotToFace) {
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        driveForward(movingSpeed, angleRobotToFace);
+
+        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
         }
 
         stop();

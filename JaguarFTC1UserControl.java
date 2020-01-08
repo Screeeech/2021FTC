@@ -56,7 +56,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
 
     double NORMAL_DRIVE_POWER_FACTOR = 1.0; // The power factor for normal drive
     double SLOW_DRIVE_POWER_FACTOR = 0.5; // The power factor for slow drive
-    double LIFT_POWER = 0.9; // The power for Arm forward/backward
+    double LIFT_POWER = 1.0; // The power for Arm forward/backward
     double LIFT_SLOW_POWER = 0.7;
     double LIFT_DOWN_POWER = -0.2;
     double MIN_HOLDING_ENCODER_VAL = 15;
@@ -72,6 +72,7 @@ public class JaguarFTC1UserControl extends LinearOpMode {
     private boolean clawButtonReleased = true;
     private boolean clawHeadButtonRelease = true;
     private boolean foundationGrabberButtonRelease = true;
+    private boolean capstoneServoButtonRelease = true;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -233,7 +234,24 @@ public class JaguarFTC1UserControl extends LinearOpMode {
                 foundationGrabberButtonRelease = true;
             }
 
+            //Capstone release servo
+            if (gamepad1.b && capstoneServoButtonRelease) {
+                capstoneServoButtonRelease = false;
 
+                if (robot.capstoneLoaded) {
+                    robot.capstoneLoaded = false;
+                    robot.capstoneServo.setDirection(Servo.Direction.REVERSE);
+                    robot.capstoneServo.setPosition(SERVO_SET_POSITION);
+                }
+                else {
+                    robot.capstoneLoaded = true;
+                    robot.capstoneServo.setDirection(Servo.Direction.FORWARD);
+                    robot.capstoneServo.setPosition(SERVO_SET_POSITION);
+                }
+            }
+            else if (!gamepad1.b){
+                capstoneServoButtonRelease = true;
+            }
 
             // Slide Control
             //                <<<<< DPAD Left and DPAD Right >>>>>>
