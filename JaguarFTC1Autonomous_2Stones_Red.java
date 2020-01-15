@@ -29,12 +29,13 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.util.RobotLog;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -62,18 +63,18 @@ import android.os.Environment;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "Deliver SkyStone and Move Foundation - Blue", group = "Concept")
+@Autonomous(name = "Deliver 2 SkyStones - Red", group = "Concept")
 //@Disabled
-public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
+public class JaguarFTC1Autonomous_2Stones_Red extends LinearOpMode {
 
     // Fine tune data
-    private int clawForwardTime = 600; // milliseconds. The time to move slide forward, which control the claw forward distance.
+    private int clawForwardTime = 500; // milliseconds. The time to move slide forward, which control the claw forward distance.
     private int clawBackwardTime = 800;
 
     private double backupDistance = 5.0; // The distance to move the robot backward after grabbing the stone
-    private double distanceToFoundation = 79; // The distance from the first stone to the center of foundation
+    private double distanceToOtherSide = 55; // The distance to move to the other side of the field during autonomous after grabbing the stone
     private double driveBackConstant = 24.0;
-    private double distanceToPark = 20.75;
+    private double distanceToPark = 24.0;
 
 
     static private final int STONE_WIDTH = 8;
@@ -84,7 +85,7 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         robot.robotInit(hardwareMap, telemetry);
-        RobotLog.d(String.format("FTC1LOG - Deliver SkyStone and Move Foundation - Blue"));
+        RobotLog.d(String.format("FTC1LOG - Deliver 2 SkyStones - Red"));
         //readFineTuneData();
 
 
@@ -102,7 +103,7 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
         robot.baseFrontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         robot.baseBackLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         robot.baseBackRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-		*/
+        */
         driver.driveForward(driver.movingSpeed, 22, driver.FACING_NORTH);
         /*
         robot.baseFrontLeftMotor.setZeroPowerBehavior(originalBehavior);
@@ -126,42 +127,53 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
         sleep(50);
 
         //      Step 2.4: Moving to other side of the field
-        driver.gyroTurn(driver.FACING_WEST);
-        driver.driveForward(driver.movingSpeed, distanceToFoundation+2, driver.FACING_WEST);
+        driver.gyroTurn(driver.FACING_EAST);
+        driver.driveForward(driver.movingSpeed, distanceToOtherSide, driver.FACING_EAST); // Moving 65 inches to make sure the one at the right can be delivered
 
-        //      Step 2.5: Detect the foundation and drop the stone
+        //      Step 2.5: Drop the stone
+        clawDropStone();
+        driver.turnClawHorizontal();
+        driver.moveClawBackward(clawBackwardTime);
         driver.gyroTurn(driver.FACING_NORTH);
-        dropStoneOnFoundation();
+
+        //      Step 2.6: Drive back
+        if (secondSkystoneAgainstWall){
+            driveBackConstant = STONE_WIDTH; // Since the other Skystone is the first one by the wall, we just pick up a Stone.
+        }
+        double distanceToSecondSkystone = distanceToOtherSide + driveBackConstant;
+        driver.driveSidewayLeft(driver.movingSpeed, distanceToSecondSkystone, driver.FACING_NORTH);
+        sleep(50);
 
 
 
-        // Phase 3: Move foundation
-        //      Step 3.1: Grab foundation
-        driver.grabFoundation(driver.GRAB);
-        sleep(500); // give time to ensure the foundation is grabbed
 
-        //      Step 3.2: Move foundation
-        // Method 1: Move foundation by setting target position
-        //driver.driveBackward(driver.movingSpeed, driver.DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION+2, driver.FACING_NORTH);
-        //sleep(100);
-        // Method 2: Drive back to the wall by setting target position and checking if the wheels stuck
-        //driver.driveBackwardToWall(driver.movingSpeed, driver.DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION+2, JaguarFTC1Driver.FACING_NORTH);
-        // Method 3: Drive back to the wall by checking if touch sensors have been pressed
-        driver.driveBackwardToWall(driver.movingSpeed, JaguarFTC1Driver.FACING_NORTH);
-        //      Step 3.3: Release foundation
-        driver.grabFoundation(driver.RELEASE);
-        sleep(500); // wait to ensure foundation is release
+
+        // Phase 3: Deliver 2nd Skystone
+        //      Step 3.1: Drive close to the 2nd Skystone or a regular stone
+        driver.lightSensorDriveToObject(driver.lightSensorSlowdownSpeed, driver.STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES, driver.FACING_NORTH);
+
+        //      Step 3.2: repeat the same steps as the first skystone
+        clawPickupStone(clawForwardTime);
+
+        //      Step 3.3: Moving back by gyro driver backward
+        driver.driveBackward(driver.movingSpeed, backupDistance,driver.FACING_NORTH);
+        sleep(50);
+
+        //      Step 3.4: Moving to other side of the field
+        driver.gyroTurn(driver.FACING_EAST);
+        driver.driveForward(driver.movingSpeed, distanceToSecondSkystone,driver.FACING_EAST);
+
+        //      Step 3.5: Drop the stone
+        clawDropStone();
+        driver.turnClawHorizontal();
+        driver.moveClawBackward(clawBackwardTime);
+
+
 
 
 
         // Phase 4: parking
-        //      Step 4.1: Move robot out of foundation
-        driver.driveSidewayRight(driver.movingSpeed, 33, driver.FACING_NORTH);
-        sleep(100);
-        driver.driveForward(driver.movingSpeed, 24, driver.FACING_NORTH);
-
-        //      Step 4.2: Park
-        driver.driveSidewayRight(driver.movingSpeed, distanceToPark, driver.FACING_NORTH);
+        driver.driveBackward(driver.movingSpeed, distanceToPark, driver.FACING_EAST);
     }
 
 
@@ -178,13 +190,12 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
         // ASSUME: the first skystone must be among the first three stones
         while (hue < JaguarFTC1Driver.HUE_THRESHOLD && count < 2) {
             // check the next stone
-            driver.driveSidewayRight(JaguarFTC1Driver.movingSpeed, STONE_WIDTH+2, JaguarFTC1Driver.FACING_NORTH);
+            driver.driveSidewayLeft(JaguarFTC1Driver.movingSpeed, STONE_WIDTH+2, JaguarFTC1Driver.FACING_NORTH);
             hue = getHueFromColorSensor(robot.sensorColor);
             distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
             RobotLog.d(String.format("FTC1LOG - Stone Detect: Distance: %4.1f, HUE %d: %5.1f", distance, count+2, hue));
             //telemetry.addData("Stone hue: ", hue);
             count++;
-            distanceToFoundation += 8;
         }
 
         if (hue < JaguarFTC1Driver.HUE_THRESHOLD) {
@@ -241,29 +252,10 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
     public void clawDropStone() {
 
         // Open claw
-        driver.moveClawForward(200);
         driver.openClaw();
         sleep(300);
     }
 
-    private void dropStoneOnFoundation() {
-        driver.liftUp(driver.LIFT_POWER,30);
-
-        //driver.driveForward(driver.movingSpeed, 4, driver.FACING_NORTH);
-        // Method 1: Move to the foundation by using light sensor
-        //driver.lightSensorDriveToObject(driver.lightSensorSlowdownSpeed, driver.STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES, driver.FACING_NORTH);
-        // Method 2: Move to the foundation by using both light sensor and distance sensor
-        driver.driveToFoundation(driver.lightSensorSlowdownSpeed, driver.FACING_NORTH);
-
-        // Step 10: Open claw to drop the stone
-        clawDropStone();
-        //driver.driveBackward(driver.movingSpeed,2,driver.FACING_NORTH);
-
-        driver.turnClawHorizontal();
-        driver.moveClawBackward(clawBackwardTime);
-
-        driver.liftDown(-0.4);
-    }
 
 
 
@@ -271,7 +263,6 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
 
 
 
-    /*
     private void readFineTuneData() {
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download";
         JsonReader opmodeCfgs = new JsonReader(path+"/JaguarAutoConfig.json");
@@ -286,5 +277,5 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
             }
         } catch (JSONException e) {
             e.printStackTrace();}
-    }*/
+    }
 }

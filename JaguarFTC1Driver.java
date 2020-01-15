@@ -38,6 +38,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -58,20 +59,22 @@ import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
  * Note:  All names are lower case and some have single spaces between words.
  */
 public class JaguarFTC1Driver {
-    // Following data needs to be changed on different floor
-    // Encoder counts for mechanum wheel to drive 1 inch. The first number in comment is the calibrated value on field. The second is the one on hard floor.
-    static final double COUNTS_PER_INCH_FORWARD = 69;       //69.4; //69;
-    static final double COUNTS_PER_INCH_BACKWARD = 69;      //70.3; //69;
-    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 75;  //75.8; //75;
-    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 75;   //76.8; //75;
+    // Following data needs to be Calibrated for different environment/floor
+    // The first number in comment is the calibrated value on field. The second is the one at home/hard floor.
+    static final double COUNTS_PER_INCH_FORWARD = 69.9;       //69.4; //69; //Encoder counts for mechanum wheel to drive 1 inch.
+    static final double COUNTS_PER_INCH_BACKWARD = 70;      //70.3; //69;
+    static final double COUNTS_PER_INCH_SIDEWAY_LEFT = 76;  //75.8; //75;
+    static final double COUNTS_PER_INCH_SIDEWAY_RIGHT = 76.8;   //76.8; //75;
+    static final double STOP_DISTANCE = 6; // Stop Distance at slowdownSpeed. 13 is the Stop Distance at movingSpeed.
+    static public final float HUE_THRESHOLD = 30;           //35;  //60; // Hue value for detecting Skystone image
+    static final int MOTOR_STUCK_THRESHOLD = 160;
 
-    static public final float HUE_THRESHOLD = 60;           //35;  //60; // Hue value for detecting Skystone image
-
-    static public final double lightSensorForwardSpeed = 0.2; //0.3;  //0.2;
-    static public final double lightSensorSlowdownSpeed = 0.2;//0.3;  //0.2;
-    static public final double slowdownSpeed = 0.1;           //0.2; //0.1;
-    static public final double movingSpeed = 0.7;             //0.8; //0.7; normal moving speed during autonomous
-    static public final double parkingSpeed = 0.5;            //0.6; //0.5;
+    // Following data needs to be changed for different environment/floor
+    static public final double lightSensorForwardSpeed = 0.3; //0.3;  //0.2;
+    static public final double lightSensorSlowdownSpeed = 0.3;//0.3;  //0.2;
+    static public final double slowdownSpeed = 0.4;           //0.2; //0.1;
+    static public final double movingSpeed = 0.8;             //0.8; //0.7; normal moving speed during autonomous
+    static public final double parkingSpeed = 0.6;            //0.6; //0.5;
     static public final double HUE_FLOOR_THRESHOLD = 170000000;//200000000;
 
     static final double VEX_MOTOR_RUN = 0.7;     // The servo position to open latch
@@ -83,7 +86,9 @@ public class JaguarFTC1Driver {
     static final double LIFT_HOLDING_POWER = 0.2;
 
     // when the robot moves close to the stones (prior to pickup), the robot stops at this distance from the stones.
-    static public final float STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES = 15F;
+    static public final float STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES = 14F;
+    static public final float STOP_DISTANCE_TO_FOUNDATION_LIGHTSENSOR = 13F; // In CM
+    static public final float STOP_DISTANCE_TO_FOUNDATION_DISTANCESENSOR = 2F; // In Inch
     static public final int DISTANCE_CODE_CLOSE = 0;
     static public final int DISTANCE_CODE_SLOWDOWN = 1;
     static public final int DISTANCE_CODE_FAR = 2;
@@ -98,7 +103,8 @@ public class JaguarFTC1Driver {
     static public final float FACING_WEST = 90;
     static public final int GRAB = 1;
     static public final int RELEASE = -1;
-    static public final double DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION = 34.0;
+    static public final double DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION = 29.0;
+    static public final double DISTANCE_SLOWDOWN = 5;
 
     /* local OpMode members. */
     JaguarFTC1Bot robot = null;
@@ -419,6 +425,7 @@ public class JaguarFTC1Driver {
         robot.baseBackLeftMotor.setPower(0);
         robot.baseBackRightMotor.setPower(0);
 
+
         // Dylan - four wheel Turn off RUN_TO_POSITION
         robot.baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -604,6 +611,126 @@ public class JaguarFTC1Driver {
         robot.baseBackRightMotor.setPower(0);
     }
 
+    public void stop(DcMotor.ZeroPowerBehavior zeroPowerBehavior) {
+        DcMotor.ZeroPowerBehavior originalBehavior = robot.baseFrontLeftMotor.getZeroPowerBehavior();
+
+        robot.baseFrontLeftMotor.setZeroPowerBehavior(zeroPowerBehavior);
+        robot.baseFrontRightMotor.setZeroPowerBehavior(zeroPowerBehavior);
+        robot.baseBackLeftMotor.setZeroPowerBehavior(zeroPowerBehavior);
+        robot.baseBackRightMotor.setZeroPowerBehavior(zeroPowerBehavior);
+
+        robot.baseFrontLeftMotor.setPower(0);
+        robot.baseFrontRightMotor.setPower(0);
+        robot.baseBackLeftMotor.setPower(0);
+        robot.baseBackRightMotor.setPower(0);
+
+        robot.baseFrontLeftMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseFrontRightMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseBackLeftMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseBackRightMotor.setZeroPowerBehavior(originalBehavior);
+    }
+
+    // Drive back to wall by checking if the wheel rotates at a slow speed
+    /*
+    public void driveBackwardToWall(double Speed, float angleRobotToFace) {
+        int lastPosition, currentPositon;
+
+        driveBackward(movingSpeed, angleRobotToFace);
+        lastPosition = robot.baseFrontLeftMotor.getCurrentPosition();
+        sleep(200);
+        currentPositon = robot.baseFrontLeftMotor.getCurrentPosition();
+
+        while (Math.abs(currentPositon-lastPosition) > MOTOR_STUCK_THRESHOLD) {
+            driveBackward(movingSpeed, angleRobotToFace);
+            sleep(100);
+            lastPosition = currentPositon;
+            currentPositon = robot.baseFrontLeftMotor.getCurrentPosition();
+        }
+        stop();
+    }
+    */
+
+    // Drive back to wall by checking if touch sensors have been pressed
+    public void driveBackwardToWall(double speed, float angleRobotToFace) {
+        while (!robot.leftTouchSensor.isPressed() && !robot.rightTouchSensor.isPressed()) {
+            driveBackward(speed, angleRobotToFace);
+            sleep(100);
+        }
+        stop();
+    }
+
+    // Drive back to wall by setting target position and checking if the wheels stuck
+    public void driveBackwardToWall(double speed, double distance, float angleRobotToFace) {
+        int lastPosition, currentPositon;
+        boolean wheelNotStuck = true;
+
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+        int newBackLeftTarget;
+        int newBackRightTarget;
+
+        int moveCounts;
+        double correction;
+
+        moveCounts = (int) (distance * COUNTS_PER_INCH_BACKWARD);
+        newFrontLeftTarget = robot.baseFrontLeftMotor.getCurrentPosition() - moveCounts;
+        newFrontRightTarget = robot.baseFrontRightMotor.getCurrentPosition() - moveCounts;
+        newBackLeftTarget = robot.baseBackLeftMotor.getCurrentPosition() - moveCounts;
+        newBackRightTarget = robot.baseBackRightMotor.getCurrentPosition() - moveCounts;
+
+        // Four wheel Mecanum motor Set Target and Turn On RUN_TO_POSITION
+        robot.baseFrontLeftMotor.setTargetPosition(newFrontLeftTarget);
+        robot.baseFrontRightMotor.setTargetPosition(newFrontRightTarget);
+        robot.baseBackLeftMotor.setTargetPosition(newBackLeftTarget);
+        robot.baseBackRightMotor.setTargetPosition(newBackRightTarget);
+
+        robot.baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.baseBackRightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        speed = Range.clip(Math.abs(speed), 0.0, 1.0);
+        robot.baseFrontLeftMotor.setPower(speed);
+        robot.baseFrontRightMotor.setPower(speed);
+        robot.baseBackLeftMotor.setPower(speed);
+        robot.baseBackRightMotor.setPower(speed);
+
+        lastPosition = robot.baseBackLeftMotor.getCurrentPosition();
+        while ((robot.baseFrontLeftMotor.isBusy() && robot.baseFrontRightMotor.isBusy() &&
+                        robot.baseBackLeftMotor.isBusy() && robot.baseBackRightMotor.isBusy())
+                && wheelNotStuck) {
+
+            // Use gyro to drive in a straight line.
+            correction = checkDirection(angleRobotToFace);
+
+            //opmode.telemetry.addData("", "Angle %7.2f Correction %7.2f",globalAngle,correction);
+            //opmode.telemetry.update();
+
+            robot.baseFrontLeftMotor.setPower(speed + correction);
+            robot.baseFrontRightMotor.setPower(speed - correction);
+            robot.baseBackLeftMotor.setPower(speed + correction);
+            robot.baseBackRightMotor.setPower(speed - correction);
+
+            currentPositon = robot.baseBackLeftMotor.getCurrentPosition();
+            opmode.telemetry.addData("", "%d",currentPositon-lastPosition);
+            opmode.telemetry.update();
+            wheelNotStuck = Math.abs(currentPositon - lastPosition) > 0;
+            lastPosition = currentPositon;
+        }
+
+        // Dylan - four wheel Stop all motion;
+        robot.baseFrontLeftMotor.setPower(0);
+        robot.baseFrontRightMotor.setPower(0);
+        robot.baseBackLeftMotor.setPower(0);
+        robot.baseBackRightMotor.setPower(0);
+
+        // Dylan - four wheel Turn off RUN_TO_POSITION
+        robot.baseFrontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.baseFrontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.baseBackLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.baseBackRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
     /**
      * Move claw forward (power on slide servo for a specific time )
      *
@@ -758,6 +885,41 @@ public class JaguarFTC1Driver {
         robot.rightLiftMotor.setPower(0);
     }
 
+    public void lightSensorDriveToObject(double speed, double stopDistance, float angleRobotToFace) {
+        double distance = robot.sensorDistance.getDistance(DistanceUnit.CM);
+
+        while ((distance == DistanceSensor.distanceOutOfRange) // Too far. Distance reading is not in fact available.
+                || Double.isNaN(distance) // Too far. Distance reading is not in fact available.
+                || distance > stopDistance) { // Still far.
+            driveForward(speed, angleRobotToFace); // Need to be called in the loop so gyro correction can be taken.
+            distance = robot.sensorDistance.getDistance(DistanceUnit.CM);
+        }
+
+        stop();
+        RobotLog.d(String.format("FTC1LOG - To Stone: Poweroff Light Sensor Distance %4.1f", distance));
+    }
+
+    public void driveToFoundation(double speed, float angleRobotToFace) {
+        double lightSensorDistance = robot.sensorDistance.getDistance(DistanceUnit.CM);
+        double distanceSensorDistance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+
+        /*
+        while ((lightDistance == DistanceSensor.distanceOutOfRange) // Too far. Distance reading is not in fact available.
+                || Double.isNaN(lightDistance) // Too far. Distance reading is not in fact available.
+                || lightDistance > STOP_DISTANCE_TO_FOUNDATION_LIGHTSENSOR) { // Still far.
+         */
+        while ( !(lightSensorDistance < STOP_DISTANCE_TO_FOUNDATION_LIGHTSENSOR) &&
+                !(distanceSensorDistance < STOP_DISTANCE_TO_FOUNDATION_DISTANCESENSOR)) { // Still far.
+            driveForward(speed, angleRobotToFace);
+//            sleep(100);
+            lightSensorDistance = robot.sensorDistance.getDistance(DistanceUnit.CM);
+            distanceSensorDistance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        }
+
+        stop();
+        RobotLog.d(String.format("FTC1LOG - To Foundation: Poweroff Distance lightSensor %4.1f, distanceSensor %4.1f", lightSensorDistance, distanceSensorDistance));
+    }
+
     public void lightSensorDriveToObject(float angleRobotToFace) {
         int distanceCode = DISTANCE_CODE_FAR;
 
@@ -775,28 +937,6 @@ public class JaguarFTC1Driver {
         stop();
     }
 
-    public void distanceSensorDriveToObject (double stopDistance) {
-        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
-        driveForward(movingSpeed, FACING_NORTH);
-
-        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
-            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
-        }
-
-        stop();
-    }
-
-    public void distanceSensorAngleDriveToObject (double stopDistance, float angleRobotToFace) {
-        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
-        driveForward(movingSpeed, angleRobotToFace);
-
-        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
-            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
-        }
-
-        stop();
-    }
-
     /** Check if stone is close to the robot
      *
      * @return yes or no
@@ -809,14 +949,67 @@ public class JaguarFTC1Driver {
         if ((distance == DistanceSensor.distanceOutOfRange)
                 || Double.isNaN(distance)
                 || distance > 2 * STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES) {
+            //opmode.telemetry.addData("Too far ", distance);
             rval = DISTANCE_CODE_FAR;
         } else if (distance > STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES) {
             // slow down
             rval = DISTANCE_CODE_SLOWDOWN;
-            //opmode.telemetry.addData("Slow down: ", distance);
+            //opmode.telemetry.addData("Still far ", distance);
         }
+        //opmode.telemetry.update();
 
         return rval;
+    }
+
+
+
+
+
+
+    public double distanceSensorDriveToObject (double speed, double stopDistance) {
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+
+        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
+            driveForward(speed, FACING_NORTH);
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        }
+
+        stop();
+        return distance;
+    }
+
+    public void distanceSensorDriveToObjectWithSlowDown (double stopDistance) {
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+
+        while ( (distance > 2 * stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
+            driveForward(movingSpeed-0.4, FACING_NORTH);
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+            opmode.telemetry.addData("direction",robot.gyro.getAngularOrientation());
+            opmode.telemetry.update();
+        }
+
+        // slow down phase
+        while (distance > stopDistance) {
+            driveForward(slowdownSpeed, FACING_NORTH);
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        }
+
+        opmode.telemetry.addData("","Distance %4.1f",distance);
+        opmode.telemetry.addData("direction",robot.gyro.getAngularOrientation());
+        opmode.telemetry.update();
+        stop();
+
+    }
+
+    public void distanceSensorAngleDriveToObject (double stopDistance, float angleRobotToFace) {
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+
+        while ( (distance > stopDistance) || (distance == DistanceSensor.distanceOutOfRange)) {
+            driveForward(movingSpeed, angleRobotToFace);
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        }
+
+        stop();
     }
 
 }

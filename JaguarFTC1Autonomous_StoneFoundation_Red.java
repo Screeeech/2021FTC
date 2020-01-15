@@ -62,9 +62,9 @@ import android.os.Environment;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "Deliver SkyStone and Move Foundation - Blue", group = "Concept")
+@Autonomous(name = "Deliver SkyStone and Move Foundation - Red", group = "Concept")
 //@Disabled
-public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
+public class JaguarFTC1Autonomous_StoneFoundation_Red extends LinearOpMode {
 
     // Fine tune data
     private int clawForwardTime = 600; // milliseconds. The time to move slide forward, which control the claw forward distance.
@@ -84,7 +84,7 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         robot.robotInit(hardwareMap, telemetry);
-        RobotLog.d(String.format("FTC1LOG - Deliver SkyStone and Move Foundation - Blue"));
+        RobotLog.d(String.format("FTC1LOG - Deliver SkyStone and Move Foundation - Red"));
         //readFineTuneData();
 
 
@@ -126,8 +126,8 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
         sleep(50);
 
         //      Step 2.4: Moving to other side of the field
-        driver.gyroTurn(driver.FACING_WEST);
-        driver.driveForward(driver.movingSpeed, distanceToFoundation+2, driver.FACING_WEST);
+        driver.gyroTurn(driver.FACING_EAST);
+        driver.driveForward(driver.movingSpeed, distanceToFoundation+2, driver.FACING_EAST);
 
         //      Step 2.5: Detect the foundation and drop the stone
         driver.gyroTurn(driver.FACING_NORTH);
@@ -156,12 +156,12 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
 
         // Phase 4: parking
         //      Step 4.1: Move robot out of foundation
-        driver.driveSidewayRight(driver.movingSpeed, 33, driver.FACING_NORTH);
+        driver.driveSidewayLeft(driver.movingSpeed, 33, driver.FACING_NORTH);
         sleep(100);
         driver.driveForward(driver.movingSpeed, 24, driver.FACING_NORTH);
 
         //      Step 4.2: Park
-        driver.driveSidewayRight(driver.movingSpeed, distanceToPark, driver.FACING_NORTH);
+        driver.driveSidewayLeft(driver.movingSpeed, distanceToPark, driver.FACING_NORTH);
     }
 
 
@@ -178,7 +178,7 @@ public class JaguarFTC1Autonomous_StoneFoundation_Blue extends LinearOpMode {
         // ASSUME: the first skystone must be among the first three stones
         while (hue < JaguarFTC1Driver.HUE_THRESHOLD && count < 2) {
             // check the next stone
-            driver.driveSidewayRight(JaguarFTC1Driver.movingSpeed, STONE_WIDTH+2, JaguarFTC1Driver.FACING_NORTH);
+            driver.driveSidewayLeft(JaguarFTC1Driver.movingSpeed, STONE_WIDTH+2, JaguarFTC1Driver.FACING_NORTH);
             hue = getHueFromColorSensor(robot.sensorColor);
             distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
             RobotLog.d(String.format("FTC1LOG - Stone Detect: Distance: %4.1f, HUE %d: %5.1f", distance, count+2, hue));

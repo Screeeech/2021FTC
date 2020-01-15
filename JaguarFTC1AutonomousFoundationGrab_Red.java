@@ -55,9 +55,9 @@ import java.util.List;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "Move Foundation - Blue", group = "Concept")
+@Autonomous(name = "Move Foundation - Red", group = "Concept")
 //@Disabled
-public class JaguarFTC1AutonomousFoundationGrab_Blue extends LinearOpMode {
+public class JaguarFTC1AutonomousFoundationGrab_Red extends LinearOpMode {
 
     // the following constants need to be adjusted accordingly
     static private final double HUE_FLOOR_THRESHOLD = 200000000;
@@ -83,14 +83,14 @@ public class JaguarFTC1AutonomousFoundationGrab_Blue extends LinearOpMode {
 
         // initialization
         robot.robotInit(hardwareMap, telemetry);
-        RobotLog.d(String.format("FTC1LOG - Move Foundation - Blue"));
+        RobotLog.d(String.format("FTC1LOG - Move Foundation - Red"));
 
         /** Wait for the game to begin */
         waitForStart();
 
 
         // Step 1: Move sideway left to align robot and foundation
-        driver.driveSidewayLeft(driver.movingSpeed, DISTANCE_ALIGN_ROBOT_FOUNDATION, driver.FACING_NORTH);
+        driver.driveSidewayRight(driver.movingSpeed, DISTANCE_ALIGN_ROBOT_FOUNDATION, driver.FACING_NORTH);
 
         // Step 2: Drive forward to foundation
         driver.driveForward(driver.movingSpeed, driver.DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION-driver.DISTANCE_SLOWDOWN, driver.FACING_NORTH);
@@ -118,7 +118,7 @@ public class JaguarFTC1AutonomousFoundationGrab_Blue extends LinearOpMode {
         sleep(500); // wait to ensure foundation is release
 
         // Step 6. Drive right to park
-        driver.driveSidewayRight(movingSpeed, DISTANCE_PARK, driver.FACING_NORTH);
+        driver.driveSidewayLeft(movingSpeed, DISTANCE_PARK, driver.FACING_NORTH);
 
         telemetry.addData("Mission Accomplished!!", "");
         telemetry.update ();

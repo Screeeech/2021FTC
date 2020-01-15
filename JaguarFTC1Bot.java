@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -42,6 +43,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 /**
  * This is NOT an opmode.
@@ -70,11 +73,12 @@ public class JaguarFTC1Bot
     public DcMotor rightLiftMotor = null;
 
     public ColorSensor sensorColor = null;
-    public ColorSensor parkingColorSensor = null;
+    //public ColorSensor parkingColorSensor = null;
     public DistanceSensor sensorDistance = null;
     public DistanceSensor sensorRange = null;
 
-    public TouchSensor sensorTouch = null;
+    public TouchSensor leftTouchSensor = null;
+    public TouchSensor rightTouchSensor = null;
     public Servo slideServo = null;
     public Servo clawServo = null;
     public Servo clawheadServo = null;
@@ -187,7 +191,7 @@ public class JaguarFTC1Bot
 
         // get a reference to the color sensor.
         sensorColor = hardwareMap.get(ColorSensor.class, "sensor_color_distance");
-        parkingColorSensor = hardwareMap.get(ColorSensor.class, "parkingColorSensor");
+        //parkingColorSensor = hardwareMap.get(ColorSensor.class, "parkingColorSensor");
 
 
         // get a reference to the distance sensor that shares the same name.
@@ -195,7 +199,8 @@ public class JaguarFTC1Bot
         sensorRange = hardwareMap.get(DistanceSensor.class, "sensor_range");
 
         //get a reference to the touch sensor
-        sensorTouch = hardwareMap.get(TouchSensor.class, "touchsensor");
+        leftTouchSensor = hardwareMap.get(TouchSensor.class, "leftTouchSensor");
+        rightTouchSensor = hardwareMap.get(TouchSensor.class, "rightTouchSensor");
 
         // Get servo ready
         slideServo = hardwareMap.get(Servo.class, "slideServo");
@@ -221,6 +226,10 @@ public class JaguarFTC1Bot
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.loggingEnabled      = false;
+        //parameters.loggingEnabled      = true;
+        //parameters.loggingTag          = "IMU";
+        //parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
 
         // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
@@ -244,8 +253,8 @@ public class JaguarFTC1Bot
             }
             Thread.yield();
         }
-
-        telemetry.addData(">", "Robot Ready.");    //
+        //gyro.startAccelerationIntegration(new Position(), new Velocity(), 500);
+        telemetry.addData(">", "Robot Ready.");//
         telemetry.update();
     }
 

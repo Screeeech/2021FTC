@@ -33,7 +33,9 @@ import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -66,14 +68,13 @@ import android.os.Environment;
 public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
 
     // Fine tune data
-    private int clawForwardTime = 600; // milliseconds. The time to move slide forward, which control the claw forward distance.
+    private int clawForwardTime = 500; // milliseconds. The time to move slide forward, which control the claw forward distance.
     private int clawBackwardTime = 800;
 
     private double backupDistance = 5.0; // The distance to move the robot backward after grabbing the stone
-    private double distanceToOtherSide = 65; // The distance to move to the other side of the field during autonomous after grabbing the stone
+    private double distanceToOtherSide = 55; // The distance to move to the other side of the field during autonomous after grabbing the stone
     private double driveBackConstant = 24.0;
-    private double distanceToPark = 32.0;
-    static private final double STOP_DISTANCE = 12.0;
+    private double distanceToPark = 24.0;
 
 
     static private final int STONE_WIDTH = 8;
@@ -84,6 +85,7 @@ public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         robot.robotInit(hardwareMap, telemetry);
+        RobotLog.d(String.format("FTC1LOG - Deliver 2 SkyStones - Blue"));
         //readFineTuneData();
 
 
@@ -95,15 +97,26 @@ public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
         // then the skystone must be offset either 8, -8, or 0 inches from the center of robot.
 
         //      Step 2.1: Move robot close to skystone
+		/* Uncomment out following lines if want to stop without Braking.
+        DcMotor.ZeroPowerBehavior originalBehavior = robot.baseFrontLeftMotor.getZeroPowerBehavior();
+        robot.baseFrontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.baseFrontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.baseBackLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.baseBackRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        */
+        driver.driveForward(driver.movingSpeed, 22, driver.FACING_NORTH);
+        /*
+        robot.baseFrontLeftMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseFrontRightMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseBackLeftMotor.setZeroPowerBehavior(originalBehavior);
+        robot.baseBackRightMotor.setZeroPowerBehavior(originalBehavior);
+        */
         // Method 1: Use motor encoder and light sensor to control the forwarding distance
-        //driver.driveForward(driver.movingSpeed, 22, driver.FACING_NORTH);
         //driver.lightSensorDriveToObject(driver.FACING_NORTH);
         // Method 2: Use distance sensor to control the forwarding distance
-		driver.distanceSensorDriveToObject(STOP_DISTANCE);
-		// Following three lines are Skystone calibration code. Need to uncomment during calibration and comment out rest code.
-        //telemetry.addData("Stone hue: ", getHueFromColorSensor(robot.sensorColor));
-        //telemetry.update();
-        //sleep(20000);
+        double distance = driver.distanceSensorDriveToObject(JaguarFTC1Driver.slowdownSpeed, JaguarFTC1Driver.STOP_DISTANCE);
+        RobotLog.d(String.format("FTC1LOG - To Stone: Poweroff Encoder %d, Distance %4.1f", robot.baseBackLeftMotor.getCurrentPosition(), distance));
+        sleep(1000);
         alignWithSkystone();
 
         //      Step 2.2: Claw grabs stone
@@ -137,7 +150,7 @@ public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
 
         // Phase 3: Deliver 2nd Skystone
         //      Step 3.1: Drive close to the 2nd Skystone or a regular stone
-        driver.lightSensorDriveToObject(driver.FACING_NORTH);
+        driver.lightSensorDriveToObject(driver.lightSensorSlowdownSpeed, driver.STOP_DISTANCE_BETWEEN_ROBOT_AND_STONES, driver.FACING_NORTH);
 
         //      Step 3.2: repeat the same steps as the first skystone
         clawPickupStone(clawForwardTime);
@@ -154,39 +167,23 @@ public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
         clawDropStone();
         driver.turnClawHorizontal();
         driver.moveClawBackward(clawBackwardTime);
-        driver.gyroTurn(driver.FACING_NORTH);
 
 
 
 
 
         // Phase 4: parking
-        // Method 1: Park using motor encoder to control stop
-        driver.driveSidewayRight(driver.movingSpeed, distanceToPark, driver.FACING_NORTH);
-        // Method 2: Park using color sensor to control stop
-        //park();
+        driver.driveBackward(driver.movingSpeed, distanceToPark, driver.FACING_WEST);
     }
 
 
 
-
-    private void park () {
-        driver.driveSidewayRight(.6, JaguarFTC1Driver.FACING_NORTH);
-        int hue = robot.parkingColorSensor.argb();
-
-        //while (opModeIsActive()) {
-        while(hue < JaguarFTC1Driver.HUE_FLOOR_THRESHOLD) {
-            //telemetry.addData("hue", hue);
-            //telemetry.update();
-            hue = robot.parkingColorSensor.argb();
-        }
-
-        driver.stop();
-    }
 
     private void alignWithSkystone () {
         // ASSUME: robot is aligned with the first stone (away from wall)
         float hue = getHueFromColorSensor(robot.sensorColor);
+        double distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+        RobotLog.d(String.format("FTC1LOG - Stone Detect: Distance: %4.1f, HUE 1: %5.1f", distance, hue));
         //telemetry.addData("Stone hue: ", hue);
         //telemetry.update();
         int count = 0;
@@ -195,6 +192,8 @@ public class JaguarFTC1Autonomous_2Stones_Blue extends LinearOpMode {
             // check the next stone
             driver.driveSidewayRight(JaguarFTC1Driver.movingSpeed, STONE_WIDTH+2, JaguarFTC1Driver.FACING_NORTH);
             hue = getHueFromColorSensor(robot.sensorColor);
+            distance = robot.sensorRange.getDistance(DistanceUnit.INCH);
+            RobotLog.d(String.format("FTC1LOG - Stone Detect: Distance: %4.1f, HUE %d: %5.1f", distance, count+2, hue));
             //telemetry.addData("Stone hue: ", hue);
             count++;
         }
