@@ -1,0 +1,39 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="123456789-987654321_Configuration-ApplicationAvoidimproperplatformusagePrivateactivity" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Configuration-ApplicationAvoidimproperplatformusagePublicactivity" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Configuration-ApplicationAvoidimproperplatformusageSetexportedexplicitly" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Configuration-UserInterfaceAvoidDataExposureDisablegeolocation" enabled="true" level="SENSEI WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Configuration-UserInterfaceAvoidTapjackingSetfilterTouchesWhenObscuredtotrueImageButton" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Configuration-UserInterfaceAvoidXSSDisableJavaScript" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_CryptoCipherInsecureSymmetricCryptographicAlgorithm" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_DataProtection-SecureCommunicationAvoidDataExposureDisablecleartexttraffic" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_DataProtection-SecureCommunicationAvoidDataExposureSetdisabledcleartexttrafficexplicitly" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_DataProtection-SecureDataDisplayAvoidDataExposureUseFlagSecureHelpertocreatetoasts" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_ErrorHandlingAvoidinformationleakageDonotprintstacktraces" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationConfiguration-ApplicationAvoidimproperplatformusagePrivateactivity" enabled="true" level="SENSEI MARKED INFO" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationConfiguration-ApplicationAvoidimproperplatformusagePublicactivity" enabled="true" level="SENSEI MARKED INFO" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-page400" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-page404" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-page500" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-page503" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-pagejava.io.IOException" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InformationLeakageImproperErrorhandlingSeterror-pagejavax.servlet.ServletException" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InjectionAvoidSQLInjectionUseParameterizedQueries" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InjectionAvoidXMLInjectionUseFEATURE_SECURE_PROCESSING" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_InputValidationgetParameter" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_LoggingAvoidInformationLeakageUseproperlogfileforloggingStacktraces" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_LoggingAvoidInformationLeakageUseproperlogformatting" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_LoggingAvoidimproperloggerUsecorrectloginstance" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_LoggingAvoidinformationleakageDisablelogginginproduction" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_LoggingAvoidinformationleakageUseproperlogfileinsteadofstdoutstderr" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_Operations-BinaryProtectionsPreventmaliciousinjectionsDisablebackups" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_OutputEncodingAvoidXSSEncodeHTMLoutput" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_PreventHardcodedPasswords" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_SecureRandomnumbergeneration" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_SessionManagementCookieSecuritySetsetHttpOnlytotrue" enabled="true" level="SENSEI ERROR" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_VulnerableComponentsAvoidusingdependencieswithknownvulnerabilitiesUselatestcommons-lang3version" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="123456789-987654321_VulnerableComponentsAvoidusingdependencieswithknownvulnerabilitiesUsesensei-secure-libraryversion2.6" enabled="true" level="WARNING" enabled_by_default="true" />
+  </profile>
+</component>
