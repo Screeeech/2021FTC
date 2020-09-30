@@ -64,21 +64,25 @@ public class JaguarFTC1Bot
     public double globalAngle;
 
     // set for four wheel Mecanum motor used by team
+    // TODO: play around with DcMotorEx for better functionality
     public DcMotor baseFrontLeftMotor = null; // Front Left base motor
     public DcMotor baseFrontRightMotor = null; // Front Right base motor
     public DcMotor baseBackLeftMotor = null; // Back Left base motor
     public DcMotor baseBackRightMotor = null; // Back Right base motor
 
+    // Lift motors
+    // TODO: fix everything from this line and below
     public DcMotor leftLiftMotor = null;
     public DcMotor rightLiftMotor = null;
 
+    // Sensors
     public ColorSensor sensorColor = null;
-    //public ColorSensor parkingColorSensor = null;
     public DistanceSensor sensorDistance = null;
     public DistanceSensor sensorRange = null;
-
     public TouchSensor leftTouchSensor = null;
     public TouchSensor rightTouchSensor = null;
+
+    // Servos
     public Servo slideServo = null;
     public Servo clawServo = null;
     public Servo clawheadServo = null;
@@ -87,6 +91,7 @@ public class JaguarFTC1Bot
 
     private boolean testBot = false;
 
+    // Encoder and servo position variables
     static final double LATCH_OPEN_POS = 0.7;     // The servo position to open latch
     static final double LATCH_CLOSE_POS = 0.0;  // The servo position to close latch
     static final int MAX_LIFT_ENCODER_VAL = 93; // Test value
@@ -96,7 +101,7 @@ public class JaguarFTC1Bot
     boolean capstoneLoaded = true;
 
     /* local OpMode members. */
-    HardwareMap hardwareMap           =  null;
+    HardwareMap hardwareMap = null;
     Telemetry telemetry = null;
     //private ElapsedTime period  = new ElapsedTime();
 
@@ -110,37 +115,6 @@ public class JaguarFTC1Bot
     {
         hardwareMap = ahwMap;
         telemetry = atelemetry;
-/*
-        // read data from a JSON configuration file - JaguarUserControlConfig.json
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download";
-
-        org.firstinspires.ftc.teamcode.util.JsonReaders.JsonReader opmodeCfgs = new org.firstinspires.ftc.teamcode.util.JsonReaders.JsonReader(path+"/JaguarUserControlConfig.json");
-
-        try {
-            JSONArray cfgArray = opmodeCfgs.jsonRoot.getJSONArray("JaguarFTC1_UserControl_Config");
-            for(int i=0; i<cfgArray.length(); i++) {
-                JSONObject userControlConfig = cfgArray.getJSONObject(i);
-                NORMAL_DRIVE_POWER_FACTOR = Double.parseDouble(userControlConfig.getString("NORMAL_DRIVE_POWER_FACTOR"));
-                SLOW_DRIVE_POWER_FACTOR = Double.parseDouble(userControlConfig.getString("SLOW_DRIVE_POWER_FACTOR"));
-                ARM_LIFT_POWER = Double.parseDouble(userControlConfig.getString("ARM_LIFT_POWER"));
-                ARM_LIFT_SLOW_POWER = Double.parseDouble(userControlConfig.getString("ARM_LIFT_SLOW_POWER"));
-                ARM_STRETCH_POWER = Double.parseDouble(userControlConfig.getString("ARM_STRETCH_POWER"));
-                ARM_STRETCH_SLOW_POWER = Double.parseDouble(userControlConfig.getString("ARM_STRETCH_SLOW_POWER"));
-                MIN_POT_VAL = Double.parseDouble(userControlConfig.getString("MIN_POT_VAL"));
-                MAX_POT_VAL = Double.parseDouble(userControlConfig.getString("MAX_POT_VAL"));
-                MAX_ARM_ENCODER_VAL = Integer.parseInt(userControlConfig.getString("MAX_ARM_ENCODER_VAL"));
-                MIN_ARM_ENCODER_VAL = Integer.parseInt(userControlConfig.getString("MIN_ARM_ENCODER_VAL"));
-                DUMPING_POT_VAL = Double.parseDouble(userControlConfig.getString("DUMPING_POT_VAL"));
-                DUMPING_ENCODER_VAL = Integer.parseInt(userControlConfig.getString("DUMPING_ENCODER_VAL"));
-                HANGING_POT_VAL = Double.parseDouble(userControlConfig.getString("HANGING_POT_VAL"));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        // Check if reading config file correctly
-        //telemetry.addData("ARM_LIFT_POWER: ", "%f", ARM_LIFT_POWER);
-        telemetry.addData("DUMPING_ENCODER_VAL: ", "%d", DUMPING_ENCODER_VAL);
-*/
 
         // Get motors for base and lift ready
         if (!testBot) {

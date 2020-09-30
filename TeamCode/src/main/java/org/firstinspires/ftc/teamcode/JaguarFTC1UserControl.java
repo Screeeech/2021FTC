@@ -48,6 +48,8 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
+// I included this mainly as a way to show how Bot and Driver can be used. We will need to overhaul all of this
+
 @TeleOp(name="JaguarFTC1UserControl", group="Linear Opmode")
 //@Disabled
 public class JaguarFTC1UserControl extends LinearOpMode {

@@ -48,15 +48,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
 
-/**
- * This is NOT an opmode.
- *
- * This class can be used to define all the specific hardware for a single robot.
- * In this case that robot is a Pushbot.
- * See PushbotTeleopTank_Iterative and others classes starting with "Pushbot" for usage examples.
- *
- * This hardware class assumes the following device names have been configured on the robot:
- * Note:  All names are lower case and some have single spaces between words.
+/** Terribly documented so I'll explain here: this just takes all out motor stuff and makes them into functions that we
+ *  can later use for auton and certian pre-programmed functions in user control
  */
 public class JaguarFTC1Driver {
     // Following data needs to be Calibrated for different environment/floor
