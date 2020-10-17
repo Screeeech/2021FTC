@@ -49,7 +49,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 
 // I included this mainly as a way to show how Bot and Driver can be used. We will need to overhaul all of this
-
+//TODO: Try converting to iterative OpMode
 @TeleOp(name="JaguarFTC1UserControl", group="Linear Opmode")
 //@Disabled
 public class JaguarFTC1UserControl extends LinearOpMode {
@@ -58,32 +58,14 @@ public class JaguarFTC1UserControl extends LinearOpMode {
 
     double NORMAL_DRIVE_POWER_FACTOR = 1.0; // The power factor for normal drive
     double SLOW_DRIVE_POWER_FACTOR = 0.5; // The power factor for slow drive
-    double LIFT_POWER = 1.0; // The power for Arm forward/backward
-    double LIFT_SLOW_POWER = 0.7;
-    double LIFT_DOWN_POWER = -0.2;
-    double MIN_HOLDING_ENCODER_VAL = 15;
-    double LIFT_HOLDING_POWER = 0.2;
-    //int MAX_LIFT_ENCODER_VAL = 93; // Test result when the arm is stretched to the longest. Left: 1750, Right: 2100
 
     static final double TOLERANCE = 0.15;
-    static final double VEX_MOTOR_RUN = 0.7;     // The servo position to open latch
-    static final double VEX_MOTOR_STOP = 0.0;
-    static final double SERVO_SET_POSITION = 1.0;
-    static final double SERVO_INIT_POSITION = 0.0;  // The servo position to close latch
-
-    private boolean clawButtonReleased = true;
-    private boolean clawHeadButtonRelease = true;
-    private boolean foundationGrabberButtonRelease = true;
-    private boolean capstoneServoButtonRelease = true;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
     @Override
     public void runOpMode() {
-        int leftLiftMotor_encoderVal = 0; // Keep left Arm Stretch motor encoder reading (Arm length)
-        int rightLiftMotor_encoderVal = 0; // Keep right Arm Stretch motor encoder reading (Arm length)
-
         robot.robotInit(hardwareMap, telemetry);
 
         // Wait for the game to start (driver presses PLAY)
@@ -112,173 +94,6 @@ public class JaguarFTC1UserControl extends LinearOpMode {
                 robot.baseBackLeftMotor.setPower(0);
                 robot.baseBackRightMotor.setPower(0);
             }
-
-
-
-
-            // Lift Control
-            //                    <<<<< DPAD Up and DPAD Down >>>>>>
-            //
-            // NOTE: The Left Arm Motor encoder value doesn't change at the same rate as the value of Right Arm Motor encoder
-            //       even though the two motors are connected by shaft.
-            //       Currently, the ticks per round of right motor are larger than those of left motor.
-            //       We just use Right Arm Motor encoder value to make decision.
-
-            leftLiftMotor_encoderVal = robot.leftLiftMotor.getCurrentPosition();
-            rightLiftMotor_encoderVal = robot.rightLiftMotor.getCurrentPosition();
-            telemetry.addData("Lift Encoder", "L: %7d R: %7d",
-                    leftLiftMotor_encoderVal, rightLiftMotor_encoderVal);
-
-            if (gamepad1.dpad_up) {
-
-                if (leftLiftMotor_encoderVal>=(JaguarFTC1Bot.MAX_LIFT_ENCODER_VAL*0.8)) { // Slow down if close to the longest
-                    robot.leftLiftMotor.setPower(LIFT_SLOW_POWER);
-                    robot.rightLiftMotor.setPower(LIFT_SLOW_POWER);
-                }
-               else {
-                    robot.leftLiftMotor.setPower(LIFT_POWER);
-                    robot.rightLiftMotor.setPower(LIFT_POWER);
-                }
-            }
-            else if (gamepad1.dpad_down) {
-                robot.leftLiftMotor.setPower(LIFT_DOWN_POWER);
-                robot.rightLiftMotor.setPower(LIFT_DOWN_POWER);
-            }
-            else {
-                if (leftLiftMotor_encoderVal>MIN_HOLDING_ENCODER_VAL) {
-                    robot.leftLiftMotor.setPower(LIFT_HOLDING_POWER);
-                    robot.rightLiftMotor.setPower(LIFT_HOLDING_POWER);
-                }
-                else {
-                    robot.leftLiftMotor.setPower(0);
-                    robot.rightLiftMotor.setPower(0);
-                }
-            }
-
-
-
-
-
-            // Claw Control
-            //                      <<<<< Left Bumper >>>>>
-            // Toggle the latch open and close
-            //
-            // If Left Bumper has been pressed and still being pressed, we consider the latch is performing toggle action now.
-            // No further action is needed.
-
-            if (gamepad1.left_bumper && clawButtonReleased) {
-                clawButtonReleased = false;
-
-                if (robot.clawOpen) {
-                    robot.clawOpen = false;
-                    robot.clawServo.setDirection(Servo.Direction.REVERSE);
-                    robot.clawServo.setPosition(SERVO_SET_POSITION);
-                }
-                else {
-                    robot.clawOpen = true;
-                    robot.clawServo.setDirection(Servo.Direction.FORWARD);
-                    robot.clawServo.setPosition(SERVO_SET_POSITION);
-                }
-            }
-            else if (!gamepad1.left_bumper){
-                clawButtonReleased = true;
-            }
-
-
-            // Claw Head Control
-            //                      <<<<< Left Trigger >>>>>
-            // Toggle the latch open and close
-            //
-            // If Left Bumper has been pressed and still being pressed, we consider the latch is performing toggle action now.
-            // No further action is needed.
-
-            if (gamepad1.left_trigger>0.8 && clawHeadButtonRelease) {
-                clawHeadButtonRelease = false;
-
-                if (robot.clawHeadHorizontal) {
-                    robot.clawHeadHorizontal = false;
-                    robot.clawheadServo.setDirection(Servo.Direction.FORWARD);
-                    robot.clawheadServo.setPosition(SERVO_SET_POSITION);
-                }
-                else {
-                    robot.clawHeadHorizontal = true;
-                    robot.clawheadServo.setDirection(Servo.Direction.REVERSE);
-                    robot.clawheadServo.setPosition(SERVO_SET_POSITION);
-                }
-            }
-            else if (gamepad1.left_trigger<=0.8){
-                clawHeadButtonRelease = true;
-            }
-
-
-            // Foundation Grabber Control
-            //                      <<<<< Right Trigger >>>>>
-            // Toggle the latch open and close
-            //
-            // If Left Bumper has been pressed and still being pressed, we consider the latch is performing toggle action now.
-            // No further action is needed.
-
-            if (gamepad1.right_trigger>0.8 && foundationGrabberButtonRelease) {
-                foundationGrabberButtonRelease = false;
-
-                if (robot.grabberUp) {
-                    robot.grabberUp = false;
-                    robot.foudationGrabberServo.setDirection(Servo.Direction.REVERSE);
-                    robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
-                }
-                else {
-                    robot.grabberUp = true;
-                    robot.foudationGrabberServo.setDirection(Servo.Direction.FORWARD);
-                    robot.foudationGrabberServo.setPosition(SERVO_SET_POSITION);
-                }
-            }
-            else if (gamepad1.right_trigger<=0.8){
-                foundationGrabberButtonRelease = true;
-            }
-
-            //Capstone release servo
-            if (gamepad1.b && capstoneServoButtonRelease) {
-                capstoneServoButtonRelease = false;
-
-                if (robot.capstoneLoaded) {
-                    robot.capstoneLoaded = false;
-                    robot.capstoneServo.setDirection(Servo.Direction.REVERSE);
-                    robot.capstoneServo.setPosition(SERVO_SET_POSITION);
-                }
-                else {
-                    robot.capstoneLoaded = true;
-                    robot.capstoneServo.setDirection(Servo.Direction.FORWARD);
-                    robot.capstoneServo.setPosition(SERVO_SET_POSITION);
-                }
-            }
-            else if (!gamepad1.b){
-                capstoneServoButtonRelease = true;
-            }
-
-            // Slide Control
-            //                <<<<< DPAD Left and DPAD Right >>>>>>
-            //
-            // Following display is used to get the power that stops the CR servo
-            //telemetry.addData("Servo Position", "%5.2f", gamepad1.right_stick_y);
-            //intakeServo.setPower(0.05); // The power to stop HSR-1425CR servo
-
-            if (gamepad1.dpad_left) {
-                robot.slideServo.setDirection(Servo.Direction.FORWARD);
-                robot.slideServo.setPosition(VEX_MOTOR_RUN);
-            }
-            else if (gamepad1.dpad_right) {
-                robot.slideServo.setDirection(Servo.Direction.REVERSE);
-                robot.slideServo.setPosition(VEX_MOTOR_RUN);
-            }
-            else {
-                robot.slideServo.setPosition(VEX_MOTOR_STOP);
-            }
-
-
-            //sleep(CYCLE_MS);
-            idle(); // For multiple threads program to give other thread a change to run.
-            telemetry.update();
-
         }
     }
 
@@ -310,6 +125,5 @@ public class JaguarFTC1UserControl extends LinearOpMode {
             robot.baseBackLeftMotor.setPower(baseBackLeftPower*NORMAL_DRIVE_POWER_FACTOR);
             robot.baseBackRightMotor.setPower(baseBackRightPower*NORMAL_DRIVE_POWER_FACTOR);
         }
-
     }
 }
