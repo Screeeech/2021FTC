@@ -49,7 +49,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 
 // I included this mainly as a way to show how Bot and Driver can be used. We will need to overhaul all of this
-//TODO: Try converting to iterative OpMode
+// TODO: Try converting to iterative OpMode
 @TeleOp(name="JaguarFTC1UserControl", group="Linear Opmode")
 //@Disabled
 public class JaguarFTC1UserControl extends LinearOpMode {
