@@ -61,6 +61,9 @@ public class Bot14787
     public DcMotor  leftShooter = null;
     public DcMotor  rightShooter = null;
     public DcMotor  liftMotor   = null;
+    public DcMotor  leftIntake  = null;
+    public DcMotor  rightIntake = null;
+
 
 
 
@@ -85,6 +88,8 @@ public class Bot14787
         leftShooter = hwMap.get(DcMotor.class, "leftShooter");
         rightShooter = hwMap.get(DcMotor.class, "rightShooter");
         liftMotor = hwMap.get(DcMotor.class, "liftMotor");
+        leftIntake = hwMap.get(DcMotor.class, "leftIntake");
+        rightIntake = hwMap.get(DcMotor.class, "rightMotor");
 
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
@@ -93,6 +98,8 @@ public class Bot14787
         leftShooter.setDirection(DcMotor.Direction.FORWARD);
         rightShooter.setDirection(DcMotor.Direction.REVERSE);
         liftMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftIntake.setDirection(DcMotor.Direction.FORWARD);
+        rightIntake.setDirection(DcMotor.Direction.REVERSE);
 
         // Set all motors to zero power
         // ONCE WE HAVE ENCODERS REMOVE THIS
@@ -103,6 +110,9 @@ public class Bot14787
         leftShooter.setPower(0);
         rightShooter.setPower(0);
         liftMotor.setPower(0);
+        leftIntake.setPower(0);
+        rightIntake.setPower(0);
+
 
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -111,6 +121,8 @@ public class Bot14787
         leftShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
     }
