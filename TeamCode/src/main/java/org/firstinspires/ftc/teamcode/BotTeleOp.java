@@ -61,6 +61,8 @@ public class BotTeleOp extends LinearOpMode {
 
     double normalDrive = 1.0; // The power factor for normal drive
     double slowDrive = 0.5; // The power factor for slow drive
+    private boolean intakePressed = false;
+    private boolean shooterPressed = false;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -77,28 +79,43 @@ public class BotTeleOp extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            // Setup a variable for each drive wheel to save power level for telemetry
-            double leftPower;
-            double rightPower;
+            // Gamepad Control for moving the robot and motors while intake donuts
+            if(gamepad1.a && intakePressed == false){
+                robot.leftIntake.setPower(0.8);
+                robot.rightIntake.setPower(0.8);
+                intakePressed = true;
+            }
+            if(gamepad1.a && intakePressed == true){
+                robot.leftIntake.setPower(0);
+                robot.rightIntake.setPower(0);
+                intakePressed = false;
+            }
+            if(gamepad1.y && shooterPressed == false){
+                robot.leftShooter.setPower(0.75);
+                robot.rightShooter.setPower(0.75);
+                shooterPressed = true;
+            }
+            if(gamepad1.y && shooterPressed == true){
+                robot.leftShooter.setPower(0);
+                robot.rightShooter.setPower(0);
+                shooterPressed = false;
+            }
 
-            // Choose to drive using either Tank Mode, or POV Mode
-            // Comment out the method that's not used.  The default below is POV.
 
-            // POV Mode uses left stick to go forward, and right stick to turn.
-            // - This uses basic math to combine motions and is easier to drive straight.
+            // MECANUM WHEEL DRIVE
             double forward = -gamepad1.left_stick_y;
             double strafe  =  -gamepad1.left_stick_x;
             double turn   =  -gamepad1.right_stick_x;
 
-            leftFront.setPower(Range.clip(forward + strafe + turn, -1.0, 1.0));
-            rightFront.setPower(Range.clip(forward - strafe - turn, -1.0, 1.0)) ;
-
+            robot.leftFront.setPower(Range.clip(forward + strafe + turn, -0.9, 0.9));
+            robot.rightFront.setPower(Range.clip(forward - strafe - turn, -0.9, 0.9)) ;
+            robot.leftBack.setPower(Range.clip(forward + strafe - turn, -0.9, 0.9));
+            robot.rightBack.setPower(Range.clip(forward - strafe + turn, -0.9, 0.9));
 
             //
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
             telemetry.update();
         }
     }
