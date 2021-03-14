@@ -34,6 +34,19 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.TouchSensor;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 /**
  * This is NOT an opmode.
@@ -54,6 +67,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Bot14787
 {
     /* Public OpMode members. */
+    public BNO055IMU gyro = null;
+    public Orientation lastAngles = new Orientation();
+    public double globalAngle;
+
     public DcMotor  leftFront   = null;
     public DcMotor  rightFront  = null;
     public DcMotor  leftBack     = null;
@@ -63,11 +80,13 @@ public class Bot14787
     public DcMotor  liftMotor   = null;
     public DcMotor  rightIntake  = null;
     public DcMotor  intakeRoller = null;
+    public Servo flickerServo = null;
 
 
 
 
-    HardwareMap hwMap           =  null;
+    HardwareMap hwMap   =  null;
+    Telemetry telemetry = null;
     private ElapsedTime period  = new ElapsedTime();
 
     /* Constructor */
@@ -90,6 +109,7 @@ public class Bot14787
         liftMotor = hwMap.get(DcMotor.class, "liftMotor");
         intakeRoller = hwMap.get(DcMotor.class, "intakeRoller");
         rightIntake = hwMap.get(DcMotor.class, "rightIntake");
+        flickerServo = hwMap.get(Servo.class, "flickerServo");
 
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
@@ -101,29 +121,54 @@ public class Bot14787
         intakeRoller.setDirection(DcMotor.Direction.REVERSE);
         rightIntake.setDirection(DcMotor.Direction.FORWARD);
 
-        // Set all motors to zero power
-        // ONCE WE HAVE ENCODERS REMOVE THIS
-        leftFront.setPower(0);
-        rightFront.setPower(0);
-        leftBack.setPower(0);
-        rightBack.setPower(0);
-        leftShooter.setPower(0);
-        rightShooter.setPower(0);
-        liftMotor.setPower(0);
-        intakeRoller.setPower(0);
-        rightIntake.setPower(0);
+        // Allows us for the robot to reset all the encoders for the wheels
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+        // Shows that the wheels use the encoders
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intakeRoller.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // Initialize gyro
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.mode                = BNO055IMU.SensorMode.IMU;
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.loggingEnabled      = false;
 
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        gyro = hwMap.get(BNO055IMU.class, "gyro");
+        gyro.initialize(parameters);
+        resetAngle();
 
+        // Send telemetry message to alert driver that we are calibrating;
+        telemetry.addData(">", "Calibrating Gyro");    //
+        telemetry.update();
+
+        // make sure the imu gyro is calibrated before continuing.
+        while (!gyro.isGyroCalibrated())
+        {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            Thread.yield();
+        }
+
+        telemetry.addData(">", "Robot Ready.");//
+        telemetry.update();
+    }
+
+    public void resetAngle(){
+        lastAngles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        globalAngle = 0;
     }
 }
