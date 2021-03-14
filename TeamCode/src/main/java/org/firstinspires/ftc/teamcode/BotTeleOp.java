@@ -61,8 +61,11 @@ public class BotTeleOp extends LinearOpMode {
 
     double normalDrive = 1.0; // The power factor for normal drive
     double slowDrive = 0.5; // The power factor for slow drive
+    double fullPower = 1.0; // Substitute instead of double
+    double noPower = 0.0; // Substitute instead of double
     private boolean intakePressed = false;
     private boolean shooterPressed = false;
+    private boolean reverseControlsPressed = false;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -81,13 +84,13 @@ public class BotTeleOp extends LinearOpMode {
 
             // Gamepad Control for moving the robot and motors while intake donuts
             if(gamepad1.a && intakePressed == false){
-                robot.leftIntake.setPower(0.8);
-                robot.rightIntake.setPower(0.8);
+                robot.intakeRoller.setPower(fullPower);
+                robot.rightIntake.setPower(fullPower);
                 intakePressed = true;
             }
             if(gamepad1.a && intakePressed == true){
-                robot.leftIntake.setPower(0);
-                robot.rightIntake.setPower(0);
+                robot.intakeRoller.setPower(noPower);
+                robot.rightIntake.setPower(noPower);
                 intakePressed = false;
             }
             if(gamepad1.y && shooterPressed == false){
@@ -96,27 +99,101 @@ public class BotTeleOp extends LinearOpMode {
                 shooterPressed = true;
             }
             if(gamepad1.y && shooterPressed == true){
-                robot.leftShooter.setPower(0);
-                robot.rightShooter.setPower(0);
+                robot.leftShooter.setPower(noPower);
+                robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
             }
 
 
-            // MECANUM WHEEL DRIVE
-            double forward = -gamepad1.left_stick_y;
-            double strafe  =  -gamepad1.left_stick_x;
-            double turn   =  -gamepad1.right_stick_x;
+            if(gamepad1.left_trigger > 0.5) {
+                double forward = -gamepad1.left_stick_y;
+                double strafe = gamepad1.left_stick_x;
+                double turn = gamepad1.right_stick_x;
 
-            robot.leftFront.setPower(Range.clip(forward + strafe + turn, -0.9, 0.9));
-            robot.rightFront.setPower(Range.clip(forward - strafe - turn, -0.9, 0.9)) ;
-            robot.leftBack.setPower(Range.clip(forward + strafe - turn, -0.9, 0.9));
-            robot.rightBack.setPower(Range.clip(forward - strafe + turn, -0.9, 0.9));
+                if (Math.abs(forward) > 0.15 || Math.abs(strafe) > 0.15 || Math.abs(turn) > 0.15) {
+                    // y to move to goldilocks height
+                    // right trigger to move everything slower
+                    mecanumDrive(forward, strafe, turn);
+                } else {
+                    robot.leftFront.setPower(0);
+                    robot.rightFront.setPower(0);
+                    robot.leftBack.setPower(0);
+                    robot.leftBack.setPower(0);
+                }
+            }
+
+            else if(gamepad1.right_trigger > 0.5) {
+                reverseControlsPressed = true;
+                double move = -gamepad1.left_stick_y;
+                double sideways = gamepad1.left_stick_x;
+                double rotate = gamepad1.right_stick_x;
+
+                if (Math.abs(move) > 0.15 || Math.abs(sideways) > 0.15 || Math.abs(rotate) > 0.15) {
+                    // right trigger to move everything in reverse
+                    reverseControls(move, sideways, rotate);
+                } else {
+                    robot.leftFront.setPower(0);
+                    robot.rightFront.setPower(0);
+                    robot.leftBack.setPower(0);
+                    robot.leftBack.setPower(0);
+                }
+
+            }
+
+
+
 
             //
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
+        }
+    }
+
+    public void mecanumDrive(double forward, double strafe, double turn) {
+        double leftFrontPower;
+        double rightFrontPower;
+        double leftBackPower;
+        double rightBackPower;
+
+        leftFrontPower = Range.clip(forward + strafe + turn, -0.9, 0.9);
+        rightFrontPower = Range.clip(forward - strafe - turn, -0.9, 0.9);
+        leftBackPower = Range.clip(forward + strafe - turn, -0.9, 0.9);
+        rightBackPower = Range.clip(forward - strafe + turn, -0.9, 0.9);
+
+        if (gamepad1.right_bumper){ // Slow motion
+            robot.leftFront.setPower(leftFrontPower*slowDrive);
+            robot.rightFront.setPower(rightFrontPower*slowDrive);
+            robot.leftBack.setPower(leftBackPower*slowDrive);
+            robot.rightBack.setPower(rightBackPower*slowDrive);
+        }
+        else {
+            robot.leftFront.setPower(leftFrontPower*normalDrive);
+            robot.rightFront.setPower(rightFrontPower*normalDrive);
+            robot.leftBack.setPower(leftBackPower*normalDrive);
+            robot.rightBack.setPower(rightBackPower*normalDrive);
+        }
+
+    }
+
+    public void reverseControls(double move, double sideways, double rotate){
+        double rightBackReverse = Range.clip(move + sideways + rotate, -0.9, 0.9);
+        double leftBackReverse = Range.clip(move - sideways - rotate, -0.9, 0.9);
+        double rightFrontReverse = Range.clip(move + sideways - rotate, -0.9, 0.9);
+        double leftFrontReverse = Range.clip(move - sideways + rotate, -0.9, 0.9);
+
+        if (gamepad1.right_bumper && reverseControlsPressed == true){ // Slow motion
+            robot.rightBack.setPower(rightBackReverse*slowDrive);
+            robot.leftBack.setPower(leftBackReverse*slowDrive);
+            robot.rightFront.setPower(rightFrontReverse*slowDrive);
+            robot.leftFront.setPower(leftFrontReverse*slowDrive);
+        }
+        else if(reverseControlsPressed == true){
+            robot.rightBack.setPower(rightBackReverse*normalDrive);
+            robot.leftBack.setPower(leftBackReverse*normalDrive);
+            robot.rightFront.setPower(rightFrontReverse*normalDrive);
+            robot.leftFront.setPower(leftFrontReverse*normalDrive);
         }
     }
 }
