@@ -45,6 +45,7 @@ public class RingTensorFlow extends LinearOpMode {
     private VuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
     Bot14787 robot = new Bot14787();
+    GyroFuncDriver gyroDriver = new GyroFuncDriver(robot, this);
 
 
     @Override
@@ -80,6 +81,8 @@ public class RingTensorFlow extends LinearOpMode {
 
         if (opModeIsActive()) {
             while (opModeIsActive()) {
+                gyroDriver.driveForward(0.8, 35, 0); // Move forward to the starter stack
+
                 if (tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
                     // the last time that call was made.
@@ -94,6 +97,30 @@ public class RingTensorFlow extends LinearOpMode {
                                     recognition.getLeft(), recognition.getTop());
                             telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
+                            if(recognition.getLabel().equals(LABEL_SECOND_ELEMENT)) {
+                                gyroDriver.driveForward(0.8, 50, 0); // Move forward to the A target zone
+                                sleep(50);
+                                gyroDriver.gyroTurn(38);
+                                gyroDriver.driveForward(0.8, 10, -45);
+                                sleep(50);
+                                gyroDriver.driveBackward(0.8, 10, -45);
+                                sleep(50);
+                                gyroDriver.gyroTurn(-38);
+                                gyroDriver.driveSidewayRight(0.8, 34, 0);
+                                sleep(50);
+                                gyroDriver.flickRing(4);
+                                gyroDriver.shootRing(4);
+                                sleep(50);
+                                gyroDriver.driveBackward(0.8, 28, 0);
+
+
+                            }
+                            else if(recognition.getLabel().equals(LABEL_FIRST_ELEMENT)) {
+
+                            }
+                            else {
+
+                            }
                         }
                         telemetry.update();
                     }

@@ -82,6 +82,9 @@ public class Bot14787
     public DcMotor  intakeRoller = null;
     public Servo flickerServo = null;
 
+    public static final double flickRightPosition = -0.5;
+    public static final double flickLeftPosition = 0.5;
+
 
 
 
@@ -120,6 +123,7 @@ public class Bot14787
         liftMotor.setDirection(DcMotor.Direction.FORWARD);
         intakeRoller.setDirection(DcMotor.Direction.REVERSE);
         rightIntake.setDirection(DcMotor.Direction.FORWARD);
+        flickerServo.setPosition(flickRightPosition);
 
         // Allows us for the robot to reset all the encoders for the wheels
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
