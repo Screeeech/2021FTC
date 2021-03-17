@@ -84,13 +84,13 @@ public class BotTeleOp extends LinearOpMode {
 
             // Gamepad Control for moving the robot and motors while intake donuts
             if(gamepad1.a && intakePressed == false){
-                robot.intakeRoller.setPower(fullPower);
-                robot.rightIntake.setPower(fullPower);
+                robot.backIntake.setPower(fullPower);
+                robot.frontIntake.setPower(fullPower);
                 intakePressed = true;
             }
             if(gamepad1.a && intakePressed == true){
-                robot.intakeRoller.setPower(noPower);
-                robot.rightIntake.setPower(noPower);
+                robot.backIntake.setPower(noPower);
+                robot.frontIntake.setPower(noPower);
                 intakePressed = false;
             }
             if(gamepad1.y && shooterPressed == false){

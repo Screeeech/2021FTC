@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
@@ -78,12 +79,10 @@ public class Bot14787
     public DcMotor  leftShooter = null;
     public DcMotor  rightShooter = null;
     public DcMotor  liftMotor   = null;
-    public DcMotor  rightIntake  = null;
-    public DcMotor  intakeRoller = null;
-    public Servo flickerServo = null;
+    public DcMotor  frontIntake  = null;
+    public DcMotor  backIntake = null;
+    public CRServo flickerServo = null;
 
-    public static final double flickRightPosition = -0.5;
-    public static final double flickLeftPosition = 0.5;
 
 
 
@@ -110,9 +109,9 @@ public class Bot14787
         leftShooter = hwMap.get(DcMotor.class, "leftShooter");
         rightShooter = hwMap.get(DcMotor.class, "rightShooter");
         liftMotor = hwMap.get(DcMotor.class, "liftMotor");
-        intakeRoller = hwMap.get(DcMotor.class, "intakeRoller");
-        rightIntake = hwMap.get(DcMotor.class, "rightIntake");
-        flickerServo = hwMap.get(Servo.class, "flickerServo");
+        backIntake = hwMap.get(DcMotor.class, "backIntake");
+        frontIntake = hwMap.get(DcMotor.class, "frontIntake");
+        flickerServo = hwMap.get(CRServo.class, "flickerServo");
 
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
@@ -121,9 +120,9 @@ public class Bot14787
         leftShooter.setDirection(DcMotor.Direction.FORWARD);
         rightShooter.setDirection(DcMotor.Direction.REVERSE);
         liftMotor.setDirection(DcMotor.Direction.FORWARD);
-        intakeRoller.setDirection(DcMotor.Direction.REVERSE);
-        rightIntake.setDirection(DcMotor.Direction.FORWARD);
-        flickerServo.setPosition(flickRightPosition);
+        backIntake.setDirection(DcMotor.Direction.REVERSE);
+        frontIntake.setDirection(DcMotor.Direction.FORWARD);
+        flickerServo.setPower(0);
 
         // Allows us for the robot to reset all the encoders for the wheels
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

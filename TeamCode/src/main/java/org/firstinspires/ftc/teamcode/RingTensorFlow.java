@@ -99,19 +99,19 @@ public class RingTensorFlow extends LinearOpMode {
                                     recognition.getRight(), recognition.getBottom());
                             if(recognition.getLabel().equals(LABEL_SECOND_ELEMENT)) {
                                 gyroDriver.driveForward(0.8, 50, 0); // Move forward to the A target zone
-                                sleep(50);
-                                gyroDriver.gyroTurn(38);
-                                gyroDriver.driveForward(0.8, 10, -45);
-                                sleep(50);
-                                gyroDriver.driveBackward(0.8, 10, -45);
-                                sleep(50);
-                                gyroDriver.gyroTurn(-38);
-                                gyroDriver.driveSidewayRight(0.8, 34, 0);
-                                sleep(50);
-                                gyroDriver.flickRing(4);
-                                gyroDriver.shootRing(4);
-                                sleep(50);
-                                gyroDriver.driveBackward(0.8, 28, 0);
+                                sleep(50); // stop for 50 seconds
+                                gyroDriver.gyroTurn(38); // turn to a specific angle in which it moves forward after
+                                gyroDriver.driveForward(0.8, 10, -45); // will move forward to push the wobble to the target zone
+                                sleep(50); // stop for 50 seconds
+                                gyroDriver.driveBackward(0.8, 10, -45); // move back to the area from where it turned after it finished pushing to the wobble
+                                sleep(50); // stop for 50 seconds
+                                gyroDriver.gyroTurn(-38); // turn to the degree of where the shooter is facing as the front
+                                gyroDriver.driveSidewayLeft(0.8, 34, 0); // it will move right actually and shoot on the other side
+                                sleep(50); // stop for 50 seconds
+                                gyroDriver.flickRing(4); // the servo will try to flick it for 4 seconds and this time will have to be reduced
+                                gyroDriver.shootRing(4);// this will shoot the two rings but this still has to be tested
+                                sleep(50); // stop for 50 seconds
+                                gyroDriver.driveBackward(0.8, 28, 0); // park
 
 
                             }
