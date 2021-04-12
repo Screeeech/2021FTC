@@ -27,18 +27,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Copyright (c) 2017 FIRST. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that
+ * the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or
+ * other materials provided with the distribution.
+ *
+ * Neither the name of FIRST nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
+ * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -72,16 +100,15 @@ public class Bot14787
     public Orientation lastAngles = new Orientation();
     public double globalAngle;
 
-    public DcMotor  leftFront   = null;
-    public DcMotor  rightFront  = null;
-    public DcMotor  leftBack     = null;
-    public DcMotor  rightBack   = null;
+    public DcMotorEx  leftFront   = null;
+    public DcMotorEx  rightFront  = null;
+    public DcMotorEx  leftBack     = null;
+    public DcMotorEx  rightBack   = null;
     public DcMotor  leftShooter = null;
     public DcMotor  rightShooter = null;
-    public DcMotor  liftMotor   = null;
     public DcMotor  frontIntake  = null;
     public DcMotor  backIntake = null;
-    public CRServo flickerServo = null;
+    public Servo flickerServo = null;
 
 
 
@@ -97,32 +124,30 @@ public class Bot14787
     }
 
     /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
+    public void init(HardwareMap ahwMap, Telemetry atelemetry) {
         // Save reference to Hardware map
         hwMap = ahwMap;
+        telemetry = atelemetry;
 
         // Define and Initialize Motors
-        leftFront  = hwMap.get(DcMotor.class, "leftFront");
-        rightFront = hwMap.get(DcMotor.class, "rightFront");
-        leftBack   = hwMap.get(DcMotor.class, "leftBack");
-        rightBack  = hwMap.get(DcMotor.class, "rightBack");
+        leftFront  = hwMap.get(DcMotorEx.class, "leftFront");
+        rightFront = hwMap.get(DcMotorEx.class, "rightFront");
+        leftBack   = hwMap.get(DcMotorEx.class, "leftBack");
+        rightBack  = hwMap.get(DcMotorEx.class, "rightBack");
         leftShooter = hwMap.get(DcMotor.class, "leftShooter");
         rightShooter = hwMap.get(DcMotor.class, "rightShooter");
-        liftMotor = hwMap.get(DcMotor.class, "liftMotor");
         backIntake = hwMap.get(DcMotor.class, "backIntake");
         frontIntake = hwMap.get(DcMotor.class, "frontIntake");
-        flickerServo = hwMap.get(CRServo.class, "flickerServo");
+        flickerServo = hwMap.get(Servo.class, "flickerServo");
 
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
         leftBack.setDirection(DcMotor.Direction.FORWARD);
         rightBack.setDirection(DcMotor.Direction.REVERSE);
         leftShooter.setDirection(DcMotor.Direction.FORWARD);
-        rightShooter.setDirection(DcMotor.Direction.REVERSE);
-        liftMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightShooter.setDirection(DcMotor.Direction.FORWARD);
         backIntake.setDirection(DcMotor.Direction.REVERSE);
-        frontIntake.setDirection(DcMotor.Direction.FORWARD);
-        flickerServo.setPower(0);
+        frontIntake.setDirection(DcMotor.Direction.REVERSE);
 
         // Allows us for the robot to reset all the encoders for the wheels
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -142,6 +167,7 @@ public class Bot14787
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.loggingEnabled      = false;
+
 
         // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
@@ -171,7 +197,8 @@ public class Bot14787
 
     public void resetAngle(){
         lastAngles = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
         globalAngle = 0;
     }
+
 }
+

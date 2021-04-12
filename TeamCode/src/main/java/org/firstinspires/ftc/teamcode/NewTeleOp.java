@@ -53,9 +53,9 @@ import org.firstinspires.ftc.teamcode.Bot14787;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Linear OpMode", group="Linear Opmode")
+@TeleOp(name="NewTeleOp", group="Linear Opmode")
 //@Disabled
-public class BotTeleOp extends LinearOpMode {
+public class NewTeleOp extends LinearOpMode {
 
     private Bot14787 robot   = new Bot14787();
 
@@ -69,11 +69,18 @@ public class BotTeleOp extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
+    // Show the elapsed game time and wheel power.
 
 
     @Override
     public void runOpMode() {
-        robot.init(hardwareMap);
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+        robot.init(hardwareMap, telemetry);
+        // Show the elapsed game time and wheel power.
+
+
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -83,19 +90,19 @@ public class BotTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
             // Gamepad Control for moving the robot and motors while intake donuts
-            if(gamepad1.a && intakePressed == false){
+            if(gamepad1.x && intakePressed == false){
                 robot.backIntake.setPower(fullPower);
                 robot.frontIntake.setPower(fullPower);
                 intakePressed = true;
             }
-            if(gamepad1.a && intakePressed == true){
+            if(gamepad1.x && intakePressed == true){
                 robot.backIntake.setPower(noPower);
                 robot.frontIntake.setPower(noPower);
                 intakePressed = false;
             }
             if(gamepad1.y && shooterPressed == false){
-                robot.leftShooter.setPower(0.75);
-                robot.rightShooter.setPower(0.75);
+                robot.leftShooter.setPower(0.62);
+                robot.rightShooter.setPower(0.62);
                 shooterPressed = true;
             }
             if(gamepad1.y && shooterPressed == true){
@@ -104,42 +111,31 @@ public class BotTeleOp extends LinearOpMode {
                 shooterPressed = false;
             }
 
+            if(gamepad1.a) {
+                robot.flickerServo.setPosition(0.02);
 
-            if(gamepad1.left_trigger > 0.5) {
-                double forward = -gamepad1.left_stick_y;
-                double strafe = gamepad1.left_stick_x;
-                double turn = gamepad1.right_stick_x;
 
-                if (Math.abs(forward) > 0.15 || Math.abs(strafe) > 0.15 || Math.abs(turn) > 0.15) {
-                    // y to move to goldilocks height
-                    // right trigger to move everything slower
-                    mecanumDrive(forward, strafe, turn);
-                } else {
-                    robot.leftFront.setPower(0);
-                    robot.rightFront.setPower(0);
-                    robot.leftBack.setPower(0);
-                    robot.leftBack.setPower(0);
-                }
             }
-
-            else if(gamepad1.right_trigger > 0.5) {
-                reverseControlsPressed = true;
-                double move = -gamepad1.left_stick_y;
-                double sideways = gamepad1.left_stick_x;
-                double rotate = gamepad1.right_stick_x;
-
-                if (Math.abs(move) > 0.15 || Math.abs(sideways) > 0.15 || Math.abs(rotate) > 0.15) {
-                    // right trigger to move everything in reverse
-                    reverseControls(move, sideways, rotate);
-                } else {
-                    robot.leftFront.setPower(0);
-                    robot.rightFront.setPower(0);
-                    robot.leftBack.setPower(0);
-                    robot.leftBack.setPower(0);
-                }
+            if(gamepad1.b) {
+                robot.flickerServo.setPosition(0.43);
 
             }
 
+
+            double leftStickY = -gamepad1.left_stick_y;
+            double leftStickX = -gamepad1.left_stick_x;
+            double rightStickX = gamepad1.right_stick_x;
+
+            if (Math.abs(leftStickY) > 0.15 || Math.abs(leftStickX) > 0.15 || Math.abs(rightStickX) > 0.15) {
+                // y to move to goldilocks height
+                // right trigger to move everything slower
+                mecanumDrive(leftStickY, leftStickX, rightStickX);
+            } else {
+                robot.leftFront.setPower(0);
+                robot.rightFront.setPower(0);
+                robot.leftBack.setPower(0);
+                robot.rightBack.setPower(0);
+            }
 
 
 
@@ -151,49 +147,21 @@ public class BotTeleOp extends LinearOpMode {
         }
     }
 
-    public void mecanumDrive(double forward, double strafe, double turn) {
-        double leftFrontPower;
-        double rightFrontPower;
-        double leftBackPower;
-        double rightBackPower;
+    public void mecanumDrive(double x, double y, double r) {
+        double baseFrontLeftPower;
+        double baseFrontRightPower;
+        double baseBackLeftPower;
+        double baseBackRightPower;
 
-        leftFrontPower = Range.clip(forward + strafe + turn, -0.9, 0.9);
-        rightFrontPower = Range.clip(forward - strafe - turn, -0.9, 0.9);
-        leftBackPower = Range.clip(forward + strafe - turn, -0.9, 0.9);
-        rightBackPower = Range.clip(forward - strafe + turn, -0.9, 0.9);
+        baseFrontLeftPower = Range.clip(x + y + r, -1.0, 1.0) ;
+        baseFrontRightPower = Range.clip(x - y - r, -1.0, 1.0) ;
+        baseBackLeftPower = Range.clip(x - y + r, -1.0, 1.0) ;
+        baseBackRightPower = Range.clip(x + y - r, -1.0, 1.0) ;
 
-        if (gamepad1.right_bumper){ // Slow motion
-            robot.leftFront.setPower(leftFrontPower*slowDrive);
-            robot.rightFront.setPower(rightFrontPower*slowDrive);
-            robot.leftBack.setPower(leftBackPower*slowDrive);
-            robot.rightBack.setPower(rightBackPower*slowDrive);
-        }
-        else {
-            robot.leftFront.setPower(leftFrontPower*normalDrive);
-            robot.rightFront.setPower(rightFrontPower*normalDrive);
-            robot.leftBack.setPower(leftBackPower*normalDrive);
-            robot.rightBack.setPower(rightBackPower*normalDrive);
-        }
-
+        robot.leftFront.setPower(baseFrontLeftPower * 0.75);
+        robot.rightFront.setPower(baseFrontRightPower);
+        robot.leftBack.setPower(baseBackLeftPower);
+        robot.rightBack.setPower(baseBackRightPower);
     }
 
-    public void reverseControls(double move, double sideways, double rotate){
-        double rightBackReverse = Range.clip(move + sideways + rotate, -0.9, 0.9);
-        double leftBackReverse = Range.clip(move - sideways - rotate, -0.9, 0.9);
-        double rightFrontReverse = Range.clip(move + sideways - rotate, -0.9, 0.9);
-        double leftFrontReverse = Range.clip(move - sideways + rotate, -0.9, 0.9);
-
-        if (gamepad1.right_bumper && reverseControlsPressed == true){ // Slow motion
-            robot.rightBack.setPower(rightBackReverse*slowDrive);
-            robot.leftBack.setPower(leftBackReverse*slowDrive);
-            robot.rightFront.setPower(rightFrontReverse*slowDrive);
-            robot.leftFront.setPower(leftFrontReverse*slowDrive);
-        }
-        else if(reverseControlsPressed == true){
-            robot.rightBack.setPower(rightBackReverse*normalDrive);
-            robot.leftBack.setPower(leftBackReverse*normalDrive);
-            robot.rightFront.setPower(rightFrontReverse*normalDrive);
-            robot.leftFront.setPower(leftFrontReverse*normalDrive);
-        }
-    }
 }
