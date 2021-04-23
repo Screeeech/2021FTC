@@ -609,9 +609,9 @@ public class GyroFuncDriver {
     public void flickRing(int flickRingTime) {
         // Move claw forward (power on slide servo for a specific time in milliseconds,
         // tunable data. Define at the top or in config file;
-        robot.flickerServo.setPower(1.0);
+        robot.flickerServo.setPosition(1.0);
         sleep(flickRingTime);
-        robot.flickerServo.setPower(0);
+        robot.flickerServo.setPosition(0);
     }
 
     public void shootRing(int shootRingTime) {

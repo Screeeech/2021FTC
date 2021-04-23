@@ -158,7 +158,7 @@ public class NewTeleOp extends LinearOpMode {
         baseBackLeftPower = Range.clip(x - y + r, -1.0, 1.0) ;
         baseBackRightPower = Range.clip(x + y - r, -1.0, 1.0) ;
 
-        robot.leftFront.setPower(baseFrontLeftPower * 0.75);
+        robot.leftFront.setPower(baseFrontLeftPower);
         robot.rightFront.setPower(baseFrontRightPower);
         robot.leftBack.setPower(baseBackLeftPower);
         robot.rightBack.setPower(baseBackRightPower);
