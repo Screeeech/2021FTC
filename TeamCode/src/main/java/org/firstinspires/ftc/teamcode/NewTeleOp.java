@@ -101,8 +101,8 @@ public class NewTeleOp extends LinearOpMode {
                 intakePressed = false;
             }
             if(gamepad1.y && shooterPressed == false){
-                robot.leftShooter.setPower(0.62);
-                robot.rightShooter.setPower(0.62);
+                robot.leftShooter.setPower(.75);
+                robot.rightShooter.setPower(.75);
                 shooterPressed = true;
             }
             if(gamepad1.y && shooterPressed == true){
@@ -122,14 +122,13 @@ public class NewTeleOp extends LinearOpMode {
             }
 
 
-            double leftStickY = -gamepad1.left_stick_y;
-            double leftStickX = -gamepad1.left_stick_x;
-            double rightStickX = gamepad1.right_stick_x;
+            double drive = -gamepad1.left_stick_y;
+            double turn = gamepad1.right_stick_x;
 
-            if (Math.abs(leftStickY) > 0.15 || Math.abs(leftStickX) > 0.15 || Math.abs(rightStickX) > 0.15) {
+            if (Math.abs(drive) > 0.15 || Math.abs(turn) > 0.15) {
                 // y to move to goldilocks height
                 // right trigger to move everything slower
-                mecanumDrive(leftStickY, leftStickX, rightStickX);
+                mecanumDrive(drive, turn);
             } else {
                 robot.leftFront.setPower(0);
                 robot.rightFront.setPower(0);
@@ -147,21 +146,17 @@ public class NewTeleOp extends LinearOpMode {
         }
     }
 
-    public void mecanumDrive(double x, double y, double r) {
-        double baseFrontLeftPower;
-        double baseFrontRightPower;
-        double baseBackLeftPower;
-        double baseBackRightPower;
+    public void mecanumDrive(double forward, double turn) {
+        double leftPower;
+        double rightPower;
+        leftPower = Range.clip(forward + turn, -1.0, 1.0);
+        rightPower = Range.clip(forward-turn, -1.0, 1.0);
+        robot.leftFront.setPower(leftPower);
+        robot.rightFront.setPower(rightPower);
+        robot.leftBack.setPower(leftPower);
+        robot.rightBack.setPower(rightPower);
 
-        baseFrontLeftPower = Range.clip(x + y + r, -1.0, 1.0) ;
-        baseFrontRightPower = Range.clip(x - y - r, -1.0, 1.0) ;
-        baseBackLeftPower = Range.clip(x - y + r, -1.0, 1.0) ;
-        baseBackRightPower = Range.clip(x + y - r, -1.0, 1.0) ;
 
-        robot.leftFront.setPower(baseFrontLeftPower);
-        robot.rightFront.setPower(baseFrontRightPower);
-        robot.leftBack.setPower(baseBackLeftPower);
-        robot.rightBack.setPower(baseBackRightPower);
     }
 
 }

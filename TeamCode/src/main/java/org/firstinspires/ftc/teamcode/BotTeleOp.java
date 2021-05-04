@@ -27,14 +27,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.teamcode.Bot14787;
 
 
 /**
@@ -50,23 +53,33 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="MotorTest", group="Linear Opmode")
-public class MotorTest extends LinearOpMode {
+@TeleOp(name="BotTeleOp", group="Linear Opmode")
+//@Disabled
+public class BotTeleOp extends LinearOpMode {
+
+    private Bot14787 robot   = new Bot14787();
+
+    double normalDrive = 1.0; // The power factor for normal drive
+    double slowDrive = 0.5; // The power factor for slow drive
+    double fullPower = 1.0; // Substitute instead of double
+    double noPower = 0.0; // Substitute instead of double
+    private boolean intakePressed = false;
+    private boolean shooterPressed = false;
+    private boolean reverseControlsPressed = false;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor testMotor = null;
-    private boolean xButtonReleased = false;
+    // Show the elapsed game time and wheel power.
+
 
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must correspond to the names assigned during the robot configuration
-        // step (using the FTC Robot Controller app on the phone).
-        testMotor  = hardwareMap.get(DcMotor.class, "testMotor");
+        robot.init(hardwareMap, telemetry);
+        // Show the elapsed game time and wheel power.
+
 
 
         // Wait for the game to start (driver presses PLAY)
@@ -76,17 +89,57 @@ public class MotorTest extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            // Setup a variable for each drive wheel to save power level for telemetry
-     
-
-            if(gamepad1.x){ 
-               testMotor.setPower(0.8); 
+            // Gamepad Control for moving the robot and motors while intake donuts
+            if(gamepad1.x && intakePressed == false){
+                robot.backIntake.setPower(fullPower);
+                robot.frontIntake.setPower(fullPower);
+                intakePressed = true;
             }
-            if(gamepad1.y){
-                testMotor.setPower(0);
+            if(gamepad1.x && intakePressed == true){
+                robot.backIntake.setPower(noPower);
+                robot.frontIntake.setPower(noPower);
+                intakePressed = false;
             }
-              
+            if(gamepad1.y && shooterPressed == false){
+                robot.leftShooter.setPower(0.62);
+                robot.rightShooter.setPower(0.62);
+                shooterPressed = true;
+            }
+            if(gamepad1.y && shooterPressed == true){
+                robot.leftShooter.setPower(noPower);
+                robot.rightShooter.setPower(noPower);
+                shooterPressed = false;
+            }
 
+            if(gamepad1.a) {
+                robot.flickerServo.setPosition(0.02);
+
+
+            }
+            if(gamepad1.b) {
+                robot.flickerServo.setPosition(0.43);
+
+            }
+
+            double leftPower;
+            double rightPower;
+
+            double drive = -gamepad1.left_stick_y;
+            double turn  =  gamepad1.right_stick_x;
+
+            leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
+            rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
+
+            robot.leftFront.setPower(leftPower);
+            robot.rightFront.setPower(rightPower);
+            robot.leftBack.setPower(leftPower);
+            robot.rightBack.setPower(rightPower);
+            //
+
+            // Show the elapsed game time and wheel power.
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.update();
         }
     }
+
 }
