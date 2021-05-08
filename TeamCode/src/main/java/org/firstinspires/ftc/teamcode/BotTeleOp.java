@@ -63,9 +63,17 @@ public class BotTeleOp extends LinearOpMode {
     double slowDrive = 0.5; // The power factor for slow drive
     double fullPower = 1.0; // Substitute instead of double
     double noPower = 0.0; // Substitute instead of double
+    double shooterVel = 1680;
+    double shooterPower = 0.62;
+
+    double leftShooterVelocity;
+    double rightShooterVelocity;
+
     private boolean intakePressed = false;
     private boolean shooterPressed = false;
+    private boolean shooterReady;
     private boolean reverseControlsPressed = false;
+    private boolean shooterSpitPressed = false;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -81,7 +89,6 @@ public class BotTeleOp extends LinearOpMode {
         // Show the elapsed game time and wheel power.
 
 
-
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
@@ -95,7 +102,7 @@ public class BotTeleOp extends LinearOpMode {
                 robot.frontIntake.setPower(fullPower);
                 intakePressed = true;
             }
-            if(gamepad1.x && intakePressed == true){
+            if(gamepad1.x && intakePressed){
                 robot.backIntake.setPower(noPower);
                 robot.frontIntake.setPower(noPower);
                 intakePressed = false;
@@ -105,21 +112,44 @@ public class BotTeleOp extends LinearOpMode {
                 robot.rightShooter.setPower(0.62);
                 shooterPressed = true;
             }
-            if(gamepad1.y && shooterPressed == true){
+            if(gamepad1.y && shooterPressed){
                 robot.leftShooter.setPower(noPower);
                 robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
             }
 
-            if(gamepad1.a) {
-                robot.flickerServo.setPosition(0.02);
+            if(shooterPressed){
+                if(Math.abs(robot.rightShooter.getVelocity() - shooterVel) > 30) {
+                    if (robot.rightShooter.getVelocity() < shooterVel) {
+                        robot.leftShooter.setPower(shooterPower);
+                        robot.rightShooter.setPower(shooterPower);
+                    } else if (robot.rightShooter.getVelocity() > shooterVel) {
+                        robot.leftShooter.setPower(shooterPower - 0.02);
+                        robot.rightShooter.setPower(shooterPower - 0.02);
+                    }
+                    leftShooterVelocity = robot.leftShooter.getVelocity();
+                    rightShooterVelocity = robot.rightShooter.getVelocity();
 
-
+                } else{
+                    shooterReady = false;
+                }
             }
-            if(gamepad1.b) {
+
+            if(gamepad1.a & shooterReady) {
+
                 robot.flickerServo.setPosition(0.43);
-
+                sleep(300);
+                robot.flickerServo.setPosition(0.02);
             }
+            if(gamepad1.b){
+
+                robot.frontIntake.setPower(-1);
+                robot.backIntake.setPower(-1.0);
+                sleep(100);
+                robot.frontIntake.setPower(noPower);
+                robot.backIntake.setPower(noPower);
+            }
+
 
             double leftPower;
             double rightPower;
@@ -138,6 +168,8 @@ public class BotTeleOp extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Motor Velocity", "Left Shooter: " + leftShooterVelocity);
+            telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
             telemetry.update();
         }
     }

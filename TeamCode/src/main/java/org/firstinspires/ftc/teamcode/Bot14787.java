@@ -100,12 +100,12 @@ public class Bot14787
     public Orientation lastAngles = new Orientation();
     public double globalAngle;
 
-    public DcMotorEx  leftFront   = null;
-    public DcMotorEx  rightFront  = null;
-    public DcMotorEx  leftBack     = null;
-    public DcMotorEx  rightBack   = null;
-    public DcMotor  leftShooter = null;
-    public DcMotor  rightShooter = null;
+    public DcMotor  leftFront   = null;
+    public DcMotor  rightFront  = null;
+    public DcMotor  leftBack     = null;
+    public DcMotor  rightBack   = null;
+    public DcMotorEx  leftShooter = null;
+    public DcMotorEx  rightShooter = null;
     public DcMotor  frontIntake  = null;
     public DcMotor  backIntake = null;
     public Servo flickerServo = null;
@@ -134,8 +134,8 @@ public class Bot14787
         rightFront = hwMap.get(DcMotorEx.class, "rightFront");
         leftBack   = hwMap.get(DcMotorEx.class, "leftBack");
         rightBack  = hwMap.get(DcMotorEx.class, "rightBack");
-        leftShooter = hwMap.get(DcMotor.class, "leftShooter");
-        rightShooter = hwMap.get(DcMotor.class, "rightShooter");
+        leftShooter = hwMap.get(DcMotorEx.class, "leftShooter");
+        rightShooter = hwMap.get(DcMotorEx.class, "rightShooter");
         backIntake = hwMap.get(DcMotor.class, "backIntake");
         frontIntake = hwMap.get(DcMotor.class, "frontIntake");
         flickerServo = hwMap.get(Servo.class, "flickerServo");

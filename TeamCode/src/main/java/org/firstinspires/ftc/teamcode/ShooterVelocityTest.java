@@ -27,18 +27,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.robotcontroller.external.samples;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Bot14787;
-
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -53,110 +51,40 @@ import org.firstinspires.ftc.teamcode.Bot14787;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="NewTeleOp", group="Linear Opmode")
+@TeleOp(name="ShooterVelocityTest", group="Linear Opmode")
 //@Disabled
-public class NewTeleOp extends LinearOpMode {
+public class ShooterVelocityTest extends LinearOpMode {
 
     private Bot14787 robot   = new Bot14787();
 
-    double normalDrive = 1.0; // The power factor for normal drive
-    double slowDrive = 0.5; // The power factor for slow drive
-    double fullPower = 1.0; // Substitute instead of double
-    double noPower = 0.0; // Substitute instead of double
-    private boolean intakePressed = false;
-    private boolean shooterPressed = false;
-    private boolean reverseControlsPressed = false;
-
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    // Show the elapsed game time and wheel power.
-
+    double shooterPower = 0.62;
 
     @Override
     public void runOpMode() {
+        robot.init(hardwareMap, telemetry);
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-
-        robot.init(hardwareMap, telemetry);
-        // Show the elapsed game time and wheel power.
-
-
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            // Gamepad Control for moving the robot and motors while intake donuts
-            if(gamepad1.x && intakePressed == false){
-                robot.backIntake.setPower(fullPower);
-                robot.frontIntake.setPower(fullPower);
-                intakePressed = true;
-            }
-            if(gamepad1.x && intakePressed == true){
-                robot.backIntake.setPower(noPower);
-                robot.frontIntake.setPower(noPower);
-                intakePressed = false;
-            }
-            if(gamepad1.y && shooterPressed == false){
-                robot.leftShooter.setPower(.75);
-                robot.rightShooter.setPower(.75);
-                shooterPressed = true;
-            }
-            if(gamepad1.y && shooterPressed == true){
-                robot.leftShooter.setPower(noPower);
-                robot.rightShooter.setPower(noPower);
-                shooterPressed = false;
-            }
+            robot.leftShooter.setPower(0.6);
+            robot.rightShooter.setPower(0.6);
 
-            if(gamepad1.a) {
-                robot.flickerServo.setPosition(0.02);
-
-
-            }
-            if(gamepad1.b) {
-                robot.flickerServo.setPosition(0.43);
-
-            }
-
-
-            double drive = -gamepad1.left_stick_y;
-            double turn = gamepad1.right_stick_x;
-
-            if (Math.abs(drive) > 0.15 || Math.abs(turn) > 0.15) {
-                // y to move to goldilocks height
-                // right trigger to move everything slower
-                mecanumDrive(drive, turn);
-            } else {
-                robot.leftFront.setPower(0);
-                robot.rightFront.setPower(0);
-                robot.leftBack.setPower(0);
-                robot.rightBack.setPower(0);
-            }
-
-
-
-            //
+            double leftShooterVelocity = robot.leftShooter.getVelocity();
+            double rightShooterVelocity = robot.rightShooter.getVelocity();
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Motor Velocity", "Left Shooter: " + leftShooterVelocity);
+            telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
             telemetry.update();
         }
     }
-
-    public void mecanumDrive(double forward, double turn) {
-        double leftPower;
-        double rightPower;
-        leftPower = Range.clip(forward + turn, -1.0, 1.0);
-        rightPower = Range.clip(forward-turn, -1.0, 1.0);
-        robot.leftFront.setPower(leftPower);
-        robot.rightFront.setPower(rightPower);
-        robot.leftBack.setPower(leftPower);
-        robot.rightBack.setPower(rightPower);
-
-
-    }
-
 }
