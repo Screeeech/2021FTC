@@ -65,10 +65,13 @@ public class BotTeleOp extends LinearOpMode {
     double noPower = 0.0; // Substitute instead of double
     double shooterVel = 1680;
     double shooterPower = 0.62;
+    double shooterVelTarget = 1540;
+
 
     double leftShooterVelocity;
     double rightShooterVelocity;
 
+    private boolean powerTargetShot = false;
     private boolean intakePressed = false;
     private boolean shooterPressed = false;
     private boolean shooterReady;
@@ -114,6 +117,31 @@ public class BotTeleOp extends LinearOpMode {
                 robot.leftShooter.setPower(noPower);
                 robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
+            }
+            if(gamepad2.dpad_up){
+                shooterPressed = true;
+                powerTargetShot = true;
+
+            }
+            if(gamepad2.dpad_down){
+                powerTargetShot = false;
+            }
+
+            if(shooterPressed && powerTargetShot){
+                if(Math.abs(robot.rightShooter.getVelocity() - shooterVel) > 30) {
+                    if (robot.rightShooter.getVelocity() < shooterVel) {
+                        robot.leftShooter.setPower(shooterPower);
+                        robot.rightShooter.setPower(shooterPower);
+                    } else if (robot.rightShooter.getVelocity() > shooterVelTarget) {
+                        robot.leftShooter.setPower(shooterPower - 0.04);
+                        robot.rightShooter.setPower(shooterPower - 0.04);
+                    }
+                    leftShooterVelocity = robot.leftShooter.getVelocity();
+                    rightShooterVelocity = robot.rightShooter.getVelocity();
+
+                } else{
+                    shooterReady = false;
+                }
             }
 
             if(shooterPressed){
