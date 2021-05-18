@@ -170,6 +170,7 @@ public class BotTeleOp extends LinearOpMode {
             telemetry.addData("Motor Velocity", "Left Shooter: " + leftShooterVelocity);
             telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
             telemetry.addData("Target Velocity : ",  + shooterVel);
+            telemetry.addData("Target Power : ",  + shooterPower);
             telemetry.addData("Current Left Shooter Power : ",  robot.leftShooter.getPower());
             telemetry.addData("Current Right Shooter Power : ",  robot.rightShooter.getPower());
             telemetry.update();
