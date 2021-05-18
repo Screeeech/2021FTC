@@ -65,7 +65,6 @@ public class BotTeleOp extends LinearOpMode {
     double noPower = 0.0; // Substitute instead of double
     double shooterVel = 1680;
     double shooterPower = 0.62;
-    double shooterVelTarget = 1540;
 
 
     double leftShooterVelocity;
@@ -108,41 +107,21 @@ public class BotTeleOp extends LinearOpMode {
                 robot.backIntake.setPower(noPower);
                 robot.frontIntake.setPower(noPower);
             }
-            if(gamepad2.x){
-                robot.leftShooter.setPower(0.62);
-                robot.rightShooter.setPower(0.62);
-                shooterPressed = true;
+            if(gamepad2.dpad_up){
+                InputShooterVelPower(0.62, 1490);
+            }
+            if(gamepad2.dpad_down) {
+                InputShooterVelPower(0.56, 1280);
+            }
+            if(gamepad2.dpad_left) {
+                InputShooterVelPower(0.45, 1040);
             }
             if(gamepad2.y && shooterPressed){
                 robot.leftShooter.setPower(noPower);
                 robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
             }
-            if(gamepad2.dpad_up){
-                shooterPressed = true;
-                powerTargetShot = true;
 
-            }
-            if(gamepad2.dpad_down){
-                powerTargetShot = false;
-            }
-
-            if(shooterPressed && powerTargetShot){
-                if(Math.abs(robot.rightShooter.getVelocity() - shooterVel) > 30) {
-                    if (robot.rightShooter.getVelocity() < shooterVel) {
-                        robot.leftShooter.setPower(shooterPower);
-                        robot.rightShooter.setPower(shooterPower);
-                    } else if (robot.rightShooter.getVelocity() > shooterVelTarget) {
-                        robot.leftShooter.setPower(shooterPower - 0.04);
-                        robot.rightShooter.setPower(shooterPower - 0.04);
-                    }
-                    leftShooterVelocity = robot.leftShooter.getVelocity();
-                    rightShooterVelocity = robot.rightShooter.getVelocity();
-
-                } else{
-                    shooterReady = false;
-                }
-            }
 
             if(shooterPressed){
                 if(Math.abs(robot.rightShooter.getVelocity() - shooterVel) > 30) {
@@ -194,6 +173,12 @@ public class BotTeleOp extends LinearOpMode {
             telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
             telemetry.update();
         }
+    }
+
+    public void InputShooterVelPower(double setShooterPower, double setShooterVel ) {
+        shooterVel = setShooterVel;
+        shooterPower = setShooterPower;
+        shooterPressed = true;
     }
 
 }
