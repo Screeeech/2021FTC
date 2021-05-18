@@ -97,22 +97,20 @@ public class BotTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
             // Gamepad Control for moving the robot and motors while intake donuts
-            if(gamepad1.x && intakePressed == false){
+            if(gamepad1.x){
                 robot.backIntake.setPower(fullPower);
                 robot.frontIntake.setPower(fullPower);
-                intakePressed = true;
             }
-            if(gamepad1.x && intakePressed){
+            if(gamepad1.y){
                 robot.backIntake.setPower(noPower);
                 robot.frontIntake.setPower(noPower);
-                intakePressed = false;
             }
-            if(gamepad1.y && shooterPressed == false){
+            if(gamepad2.x){
                 robot.leftShooter.setPower(0.62);
                 robot.rightShooter.setPower(0.62);
                 shooterPressed = true;
             }
-            if(gamepad1.y && shooterPressed){
+            if(gamepad2.y && shooterPressed){
                 robot.leftShooter.setPower(noPower);
                 robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
@@ -135,21 +133,12 @@ public class BotTeleOp extends LinearOpMode {
                 }
             }
 
-            if(gamepad1.a & shooterReady) {
+            if(gamepad2.a & shooterReady) {
 
                 robot.flickerServo.setPosition(0.43);
                 sleep(300);
                 robot.flickerServo.setPosition(0.02);
             }
-            if(gamepad1.b){
-
-                robot.frontIntake.setPower(-1);
-                robot.backIntake.setPower(-1.0);
-                sleep(100);
-                robot.frontIntake.setPower(noPower);
-                robot.backIntake.setPower(noPower);
-            }
-
 
             double leftPower;
             double rightPower;
@@ -159,6 +148,11 @@ public class BotTeleOp extends LinearOpMode {
 
             leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
             rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
+
+            if(gamepad1.right_trigger > 0.1){
+                leftPower *= slowDrive;
+                rightPower *= slowDrive;
+            }
 
             robot.leftFront.setPower(leftPower);
             robot.rightFront.setPower(rightPower);
