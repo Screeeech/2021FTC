@@ -74,8 +74,6 @@ public class BotTeleOp extends LinearOpMode {
     private boolean intakePressed = false;
     private boolean shooterPressed = false;
     private boolean shooterReady;
-    private boolean reverseControlsPressed = false;
-    private boolean shooterSpitPressed = false;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -117,8 +115,6 @@ public class BotTeleOp extends LinearOpMode {
                 InputShooterVelPower(0.45, 1040);
             }
             if(gamepad2.y && shooterPressed){
-                robot.leftShooter.setPower(noPower);
-                robot.rightShooter.setPower(noPower);
                 shooterPressed = false;
             }
 
@@ -138,10 +134,12 @@ public class BotTeleOp extends LinearOpMode {
                 } else{
                     shooterReady = false;
                 }
+            }else{
+                robot.leftShooter.setPower(noPower);
+                robot.rightShooter.setPower(noPower);
             }
 
             if(gamepad2.a & shooterReady) {
-
                 robot.flickerServo.setPosition(0.43);
                 sleep(300);
                 robot.flickerServo.setPosition(0.02);
@@ -171,11 +169,13 @@ public class BotTeleOp extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motor Velocity", "Left Shooter: " + leftShooterVelocity);
             telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
+            telemetry.addData("Target Velocity : ",  + shooterVel);
+            telemetry.addData("Current Shooter Power : ",  + shooterPower);
             telemetry.update();
         }
     }
 
-    public void InputShooterVelPower(double setShooterPower, double setShooterVel ) {
+    public void InputShooterVelPower(double setShooterPower, double setShooterVel) {
         shooterVel = setShooterVel;
         shooterPower = setShooterPower;
         shooterPressed = true;
