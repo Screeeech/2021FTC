@@ -118,7 +118,7 @@ public class BotTeleOp extends LinearOpMode {
                 InputShooterVelPower(0.45, 1040);
             }
 
-            if(gamepad1.a){
+            if(gamepad2.a){
                 if(customShooter){
                     SetCustomShooter();
                     customShooter = false;
@@ -130,22 +130,28 @@ public class BotTeleOp extends LinearOpMode {
             if(gamepad2.left_bumper && customShooter){
                 customPower -= 10;
             }
-            if(gamepad1.right_bumper && customShooter){
+            if(gamepad2.right_bumper && customShooter){
                 customPower += 10;
             }
-            if(gamepad1.left_trigger > 0.1 && customShooter){
+            if(gamepad2.left_trigger > 0.1 && customShooter){
                 customVel -= 10;
             }
-            if(gamepad1.right_trigger > 0.1 && customShooter){
+            if(gamepad2.right_trigger > 0.1 && customShooter){
                 customVel += 10;
             }
-            if(gamepad2.y && shooterPressed){
-                shooterPressed = false;
+            if(gamepad2.y){
+                if(shooterPressed){
+                    shooterPressed = false;
+                } else{
+                    robot.leftShooter.setPower(0.5);
+                    robot.rightShooter.setPower(0.5);
+                }
             }
 
 
             if(shooterPressed){
                 if(Math.abs(robot.rightShooter.getVelocity() - shooterVel) > 30) {
+                    shooterReady = false;
                     if (robot.rightShooter.getVelocity() < shooterVel) {
                         robot.leftShooter.setPower(shooterPower);
                         robot.rightShooter.setPower(shooterPower);
@@ -157,14 +163,14 @@ public class BotTeleOp extends LinearOpMode {
                     rightShooterVelocity = robot.rightShooter.getVelocity();
 
                 } else{
-                    shooterReady = false;
+                    shooterReady = true;
                 }
             }else{
                 robot.leftShooter.setPower(noPower);
                 robot.rightShooter.setPower(noPower);
             }
 
-            if(gamepad2.a & shooterReady) {
+            if(gamepad1.b & shooterReady) {
                 robot.flickerServo.setPosition(0.43);
                 sleep(300);
                 robot.flickerServo.setPosition(0.02);

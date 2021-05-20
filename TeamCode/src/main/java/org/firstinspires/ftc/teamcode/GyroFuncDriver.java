@@ -615,8 +615,8 @@ public class GyroFuncDriver {
     }
 
     public void shootRing(int shootRingTime) {
-        robot.leftShooter.setPower(0.75);
-        robot.rightShooter.setPower(0.75);
+        robot.leftShooter.setPower(0.62);
+        robot.rightShooter.setPower(0.62);
         sleep(shootRingTime);
         robot.leftShooter.setPower(0);
         robot.rightShooter.setPower(0);
