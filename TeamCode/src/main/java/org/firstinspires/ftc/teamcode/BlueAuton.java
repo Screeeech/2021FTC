@@ -89,10 +89,13 @@ public class BlueAuton extends LinearOpMode {
         waitForStart();
 
 
-        // Step 1: Drive forward to the red line
+        // Step 1: Drive forward to half the distance of the position of the red line
         driver.driveForward(driver.movingSpeed, driver.DISTANCE_BETWEEN_ROBOT_AND_FOUNDATION, driver.FACING_NORTH);
-        // Step 2: Drive(strafe right) in order to position the robot to shoot in the high goal
-        driver.driveSidewayRight(driver.movingSpeed, 9, driver.FACING_NORTH);
+        // Step 2: Turn and then move forward to the red line to position our robot to shoot the preloaded rings in the high goal
+        driver.gyroTurn(90);
+        driver.driveForward(driver.movingSpeed, 7, driver.FACING_EAST);
+        driver.gyroTurn(-90);
+        driver.driveForward(driver.movingSpeed, 9, driver.FACING_NORTH);
         // Step 3: Shoot preloaded rings in the high goal
         driver.shootRing(35);
         driver.flickRing(20);
