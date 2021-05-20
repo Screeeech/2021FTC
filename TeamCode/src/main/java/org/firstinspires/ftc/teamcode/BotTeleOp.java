@@ -66,6 +66,9 @@ public class BotTeleOp extends LinearOpMode {
     double shooterVel = 1680;
     double shooterPower = 0.62;
 
+    double customPower = 0;
+    double customVel = 0;
+    boolean customShooter = false;
 
     double leftShooterVelocity;
     double rightShooterVelocity;
@@ -113,6 +116,28 @@ public class BotTeleOp extends LinearOpMode {
             }
             if(gamepad2.dpad_left) {
                 InputShooterVelPower(0.45, 1040);
+            }
+
+            if(gamepad1.a){
+                if(customShooter){
+                    SetCustomShooter();
+                    customShooter = false;
+                } else{
+                    customShooter = true;
+                }
+            }
+
+            if(gamepad2.left_bumper && customShooter){
+                customPower -= 10;
+            }
+            if(gamepad1.right_bumper && customShooter){
+                customPower += 10;
+            }
+            if(gamepad1.left_trigger > 0.1 && customShooter){
+                customVel -= 10;
+            }
+            if(gamepad1.right_trigger > 0.1 && customShooter){
+                customVel += 10;
             }
             if(gamepad2.y && shooterPressed){
                 shooterPressed = false;
@@ -167,12 +192,14 @@ public class BotTeleOp extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Motor Velocity", "Left Shooter: " + leftShooterVelocity);
-            telemetry.addData("Motor Velocity", "Right Shooter: " + rightShooterVelocity);
-            telemetry.addData("Target Velocity : ",  + shooterVel);
-            telemetry.addData("Target Power : ",  + shooterPower);
-            telemetry.addData("Current Left Shooter Power : ",  robot.leftShooter.getPower());
-            telemetry.addData("Current Right Shooter Power : ",  robot.rightShooter.getPower());
+            telemetry.addData("Left Shooter:", leftShooterVelocity + ", " + robot.leftShooter.getPower());
+            telemetry.addData("Right Shooter", rightShooterVelocity + ", " + robot.rightShooter.getPower());
+            telemetry.addData("Target", shooterVel + ", " + shooterPower);
+            if(customShooter){
+                telemetry.addData("Custom Mode:", "true");
+            }else{
+                telemetry.addData("Custom Mode:", "false");
+            }
             telemetry.update();
         }
     }
@@ -181,6 +208,11 @@ public class BotTeleOp extends LinearOpMode {
         shooterVel = setShooterVel;
         shooterPower = setShooterPower;
         shooterPressed = true;
+    }
+
+    public void SetCustomShooter(){
+        shooterVel = customVel;
+        shooterPower = customPower;
     }
 
 }
